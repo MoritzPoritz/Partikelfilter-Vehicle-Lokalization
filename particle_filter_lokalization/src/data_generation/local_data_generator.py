@@ -6,6 +6,7 @@ import config.config as config
 import utils.write_to_csv as write_to_csv
 import utils.save_image as save_image
 import cv2 as cv
+import matplotlib.pyplot as plt
 class LocalDataGenerator: 
     def __init__(self):
         # control inputs
@@ -28,7 +29,7 @@ class LocalDataGenerator:
         self.distance_map = []
         self.x_range = np.array([0,0])
         self.y_range = np.array([0,0])
-        self.accounted_decimal_places = 2
+        self.accounted_decimal_places = 0
 
 
     def drive_straight_in_x_direction(self):
@@ -48,6 +49,9 @@ class LocalDataGenerator:
             self.car_m_orientations.append(x[4]+config.sensor_std[1]*np.random.randn())   
 
         self.write_result_to_csv("straight_in_x_")
+
+
+    
     def write_result_to_csv(self, type): 
         data = {
             'acceleration_input': self.car_ci_accelerations,
@@ -64,21 +68,46 @@ class LocalDataGenerator:
         self.create_map_image("map_image_straight_line")
 
 
-    def positions_to_image_coordinates(self):
-        
+    def floating_numbers_to_whole_numbers(self, floating_number):
+        return int(floating_number * 10**self.accounted_decimal_places)
 
     def create_map_image(self, name): 
-        self.x_range = (np.array(self.car_gt_positions_x).min(), np.array(self.car_gt_positions_x).max())
-        self.y_range = (np.array(self.car_gt_positions_y).min(), np.array(self.car_gt_positions_y).max())
+        
+        self.x_range = (
+            self.floating_numbers_to_whole_numbers(np.array(self.car_gt_positions_x).min()),
+            self.floating_numbers_to_whole_numbers(np.array(self.car_gt_positions_x).max())
+        )
+
+
+        self.y_range = (
+            
+            self.floating_numbers_to_whole_numbers(np.array(self.car_gt_positions_y).min()),
+            self.floating_numbers_to_whole_numbers(np.array(self.car_gt_positions_y).max())
+        )
+
+        if (abs(self.y_range[1]-self.y_range[0])< 200):
+            self.y_range = (-100,100)   
+
         
         
-        self.map_shape = (self.y_range[1] - self.y_range[0]+1, self.x_range[1] - self.x_range[0]+1)
+        self.map_shape = (
+            self.y_range[1] - self.y_range[0]+self.floating_numbers_to_whole_numbers(1),
+            self.x_range[1] - self.x_range[0]+self.floating_numbers_to_whole_numbers(1)
+        )
         print(self.map_shape)
         self.map = np.array(np.zeros(self.map_shape))  
         
         position_vectors = np.stack([self.car_gt_positions_x, self.car_gt_positions_y],axis=1)
         for pos in position_vectors: 
-            self.map[int(pos[0]*10**self.accounted_decimal_places-self.x_range[0]*10**self.accounted_decimal_places), int(pos[1]*10**self.accounted_decimal_places-self.y_range[0]*10**self.accounted_decimal_places)] = 1
+            index = [
+                int(self.floating_numbers_to_whole_numbers(pos[0])-self.x_range[0]), 
+                int(self.floating_numbers_to_whole_numbers(pos[1])-self.y_range[0])
+            ]
+            self.map[index[1],index[0]] = 1
+        plt.imshow(self.map, cmap="gray")
+        plt.show()
+        #cv.imwrite(PROJECT_ROOT + "\..\data\images\map.png",255*self.map_array)
 
         save_image.save_array_as_image(self.map,"map_image_straight_line" )
+
 
