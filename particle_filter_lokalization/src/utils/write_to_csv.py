@@ -8,7 +8,6 @@ def write_to_csv(name, data):
                   os.path.dirname('data'), 
                   os.pardir)
     ) + '\\data\\'
-    print(data_path)
 
     path = data_path+str(name)+'.csv'
     df = pd.DataFrame(data)

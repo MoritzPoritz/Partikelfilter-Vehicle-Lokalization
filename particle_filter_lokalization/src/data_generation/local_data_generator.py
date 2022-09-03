@@ -4,6 +4,8 @@ import pandas as pd
 import process_model.front_wheel_bycicle_model as fw_bycicle_model
 import config.config as config
 import utils.write_to_csv as write_to_csv
+import utils.save_image as save_image
+import cv2 as cv
 class LocalDataGenerator: 
     def __init__(self):
         # control inputs
@@ -20,6 +22,13 @@ class LocalDataGenerator:
         self.car_m_accelerations = []
         self.car_m_orientations = []
 
+        # distance transform
+        self.map_shape = (0,0)
+        self.map = []
+        self.distance_map = []
+        self.x_range = np.array([0,0])
+        self.y_range = np.array([0,0])
+        self.accounted_decimal_places = 2
 
 
     def drive_straight_in_x_direction(self):
@@ -51,6 +60,25 @@ class LocalDataGenerator:
             'timestamps': self.car_gt_timestamps
         }
         write_to_csv.write_to_csv(type + str("data_"), data)
+        #save_image.save_array_as_image(np.stack([self.car_gt_positions_x, self.car_gt_positions_y],axis=1),"map_image_straight_line" )
+        self.create_map_image("map_image_straight_line")
 
-            
+
+    def positions_to_image_coordinates(self):
+        
+
+    def create_map_image(self, name): 
+        self.x_range = (np.array(self.car_gt_positions_x).min(), np.array(self.car_gt_positions_x).max())
+        self.y_range = (np.array(self.car_gt_positions_y).min(), np.array(self.car_gt_positions_y).max())
+        
+        
+        self.map_shape = (self.y_range[1] - self.y_range[0]+1, self.x_range[1] - self.x_range[0]+1)
+        print(self.map_shape)
+        self.map = np.array(np.zeros(self.map_shape))  
+        
+        position_vectors = np.stack([self.car_gt_positions_x, self.car_gt_positions_y],axis=1)
+        for pos in position_vectors: 
+            self.map[int(pos[0]*10**self.accounted_decimal_places-self.x_range[0]*10**self.accounted_decimal_places), int(pos[1]*10**self.accounted_decimal_places-self.y_range[0]*10**self.accounted_decimal_places)] = 1
+
+        save_image.save_array_as_image(self.map,"map_image_straight_line" )
 
