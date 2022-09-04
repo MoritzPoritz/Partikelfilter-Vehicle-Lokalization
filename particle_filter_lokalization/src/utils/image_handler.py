@@ -18,4 +18,6 @@ def image_to_array(name):
         os.pardir)
     ) + '\\data\\'
 
-    return cv.imread(data_path+name+".png")
+    image =  cv.imread(data_path+name+".png",)
+    gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    return gray_image

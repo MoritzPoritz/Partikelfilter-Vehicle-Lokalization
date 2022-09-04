@@ -35,23 +35,49 @@ class LocalDataGenerator:
         self.y_range = np.array([0,0])
         self.accounted_decimal_places = 0
         self.position_vectors_in_image_coordinates = []
+        self.xs = []
 
-
-    def drive_straight_in_x_direction(self):
+    def drive_a_long_curve(self): 
+        self.xs = []
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
-        model.set_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0)
-        u = np.array([0,0])
-        for i in range(1000): 
-            model.F(u=u)
-            x = model.get_current_state()
+        self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
+
+        u = np.array([0.1,0])
+
+        for i in range(1,1000): 
+            u[1] = u[1]+ 0.00001
+            if (u[0]< 10): 
+                u[0] = u[0]+ 0.00001
+            
+            self.xs.append(model.F(x=self.xs[i-1],u=u))          
             self.car_ci_accelerations.append(u[0])
             self.car_ci_steerings.append(u[1])
-            self.car_gt_positions_x.append(x[0])
-            self.car_gt_positions_y.append(x[1])
-            self.car_gt_velocities.append(x[2])
+            self.car_gt_positions_x.append(self.xs[i-1][0])
+            self.car_gt_positions_y.append(self.xs[i-1][1])
+            self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(x[3]+config.sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(x[4]+config.sensor_std[1]*np.random.randn())   
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())   
+            
+        self.write_result_to_csv(config.curve_line_name)
+
+    def drive_straight_in_x_direction(self):
+        self.xs = []
+
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        u = np.array([0,0])
+        self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
+        for i in range(1,1000): 
+            self.xs.append(model.F(x=self.xs[i-1],u=u))          
+            self.car_ci_accelerations.append(u[0])
+            self.car_ci_steerings.append(u[1])
+            self.car_gt_positions_x.append(self.xs[i-1][0])
+            self.car_gt_positions_y.append(self.xs[i-1][1])
+            self.car_gt_velocities.append(self.xs[i-1][2])
+            self.car_gt_timestamps.append(config.dt*i)
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())   
+            
         self.write_result_to_csv(config.straight_x_line_name)
 
 
@@ -122,16 +148,10 @@ class LocalDataGenerator:
 
     def create_distance_map(self,name):
         self.distance_map = cv.GaussianBlur(self.map,(5,5),2)
-        self.distance_map = cv.GaussianBlur(self.distance_map,(5,5),2)
-        self.distance_map = cv.GaussianBlur(self.distance_map,(5,5),2)
+
+        for i in range(6):
+            self.distance_map = cv.GaussianBlur(self.distance_map,(5,5),2)
         to_one = 1/self.distance_map.max()
         self.distance_map = self.distance_map * to_one
         image_handler.save_array_as_image(self.distance_map*255,name+config.distance_map_suffix)
-        '''
         
-        inverted_map = 1-self.map
-        print(type(self.map))
-        self.distance_map = cv.distanceTransform(inverted_map, cv.DIST_L2, 3, cv.CV_8U)
-        cv.normalize(self.distance_map, self.distance_map, 0, 1.0, cv.NORM_MINMAX)
-        self.distance_map = 1- self.distance_map
-        '''

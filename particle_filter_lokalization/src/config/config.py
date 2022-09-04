@@ -1,4 +1,6 @@
 straight_x_line_name = "straight_in_x"
+curve_line_name = "curve"
+
 data_suffix = '__data'
 image_and_image_data_prefix = 'map_image__'
 image_suffix = '__image'
@@ -9,7 +11,7 @@ distance_map_suffix = '__distance_map'
 # acc, orientation, distance
 sensor_std = [.2, .2, .2]
 N = 500
-neff_threshold = 50
+neff_threshold = 2
 std = [0, 0]
 
 v_range = [0, 10]

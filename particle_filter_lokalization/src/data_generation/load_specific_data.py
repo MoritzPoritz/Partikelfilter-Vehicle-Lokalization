@@ -1,5 +1,6 @@
 import pandas as pd
+import utils.csv_handler as csv_handler
 def load_simulation_data(name):
-    sim_data = pd.read_csv("../../data/"+name+".csv")
+    return csv_handler.load_csv(name)
     
     
