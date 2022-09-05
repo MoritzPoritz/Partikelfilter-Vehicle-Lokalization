@@ -14,9 +14,9 @@ map_border = 100
 
 # stuff for particle filter
 # acc, orientation, distance
-sensor_std = [.2, .2, .2]
-N = 500
-neff_threshold = 2
+sensor_std = [.3, .3, .3]
+N = 5000
+neff_threshold = 20
 std = [0, 0]
 
 v_range = [0, 10]
