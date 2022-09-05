@@ -49,7 +49,7 @@ class ParticleFilterIMU:
                 self.simulation_data['orientation_measurement'][0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([30, 30, config.sensor_std[0], config.sensor_std[1], config.sensor_std[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius, config.initial_pos_radius, config.sensor_std[0], config.sensor_std[1], config.sensor_std[1], np.deg2rad(70)])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -184,9 +184,10 @@ class ParticleFilterIMU:
             'gt_x': self.ground_truth[:,0], 
             'gt_y': self.ground_truth[:,1], 
             'xs_x': self.xs[:,0], 
-            'xs_y': self.xs[:,1]
+            'xs_y': self.xs[:,1],
+            'Ts': self.Ts
         }
-        csv_handler.write_to_csv('results/'+self.dataset_name, data)
+        csv_handler.write_to_csv('filter_results/'+self.dataset_name, data)
     
     def evaluate(self): 
         rx = self.xs[:,0] - self.ground_truth[:,0]

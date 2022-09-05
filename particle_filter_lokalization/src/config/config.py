@@ -15,12 +15,14 @@ map_border = 100
 # stuff for particle filter
 # acc, orientation, distance
 sensor_std = [.3, .3, .3]
-N = 5000
+N = 100
 neff_threshold = 20
 std = [0, 0]
 
 v_range = [0, 10]
 a_range = [0, 10]
+
+initial_pos_radius = 30
 # processmodel specifics
 L = 2.743
 dt = 0.05
