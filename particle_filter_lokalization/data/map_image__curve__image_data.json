@@ -1,7 +1,7 @@
 {
     "decimal_multiplier": 1,
-    "x_min": 1,
-    "y_min": -100,
-    "x_max": 354,
-    "y_max": 100
+    "x_min": -99,
+    "y_min": -99,
+    "x_max": 213,
+    "y_max": 206
 }

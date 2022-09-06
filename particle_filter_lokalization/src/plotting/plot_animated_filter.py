@@ -1,13 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-def plot_results_animated(particles, weights, xs, ground_truth, dm, Ts): 
+def plot_results_animated(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db): 
         
     print("Particles: ",particles.dtype)
     print("weights: ",weights.dtype)
     print("xs: ",xs.dtype)
     print("ground_truth: ",ground_truth.dtype)
-    fig, ax = plt.subplots()
+    fig, ax1 = plt.subplots()
+    mses = (xs[:,0] - ground_truth[:,0])**2 + (xs[:,0] - ground_truth[:,0])**2
+    image_xs_list = []
+    image_gt_list = []
+
     def animate(i):
         # First convert data to image coordinates
         
@@ -16,17 +20,26 @@ def plot_results_animated(particles, weights, xs, ground_truth, dm, Ts):
         ground_truth_image = []
         particles_image = np.array(list(map(dm.world_coordinates_to_image, particles[i][:, 0:2])))
         xs_image = dm.world_coordinates_to_image(np.array(xs[i]))
-        ground_truth_image = dm.world_coordinates_to_image(np.array(ground_truth[i]))        
+        ground_truth_image = dm.world_coordinates_to_image(np.array(ground_truth[i]))     
+
+        image_xs_list.append(xs_image)
+        image_gt_list.append(ground_truth_image)   
         # than plot the data
-        ax.clear()
+        ax1.clear()
+        ax1.set_title("Partikel filter animation")
+        
         plt.imshow(dm.distance_map, cmap="gray",alpha=0.2)
-        ax.scatter(particles_image[:,0], particles_image[:,1], color="b", label="particles", s = weights[i] * 100)
-        #ax.plot(weights[i][:,0], weights[i][:,1], c = "yellow")
-        ax.scatter(xs_image[0], xs_image[1], color="red", label="estimation")
-        ax.scatter(ground_truth_image[0], ground_truth_image[1], color="green", label="ground truth")
-        #ax.set_ylim([2500, 0])
-        #ax.set_xlim([0, 2500])
-        plt.title("At: " + str(Ts[i]))
+        ax1.scatter(particles_image[:,0], particles_image[:,1], color="b", label="particles", s = weights[i] * 1000)
+        #ax1.plot(weights[i][:,0], weights[i][:,1], c = "yellow")
+        ax1.scatter(xs_image[0], xs_image[1], color="red", label="estimation")
+        ax1.scatter(ground_truth_image[0], ground_truth_image[1], color="green", label="ground truth")
+        #plotlines
+        ax1.plot(np.array(image_xs_list)[:,0], np.array(image_xs_list)[:,1], color="red", label="estimation")
+        ax1.plot(np.array(image_gt_list)[:,0], np.array(image_gt_list)[:,1], color="green", label="ground truth")
+
+        ax1.legend()
+      
+        plt.title("MSE: " + '{0:.3g}'.format(mse) + " - MSE dB: " +'{0:.3g}'.format(mse_db) + " - At: " + '{0:.3g}'.format(Ts[i]))
         plt.legend()
 
 
