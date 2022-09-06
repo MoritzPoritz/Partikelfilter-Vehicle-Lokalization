@@ -11,7 +11,7 @@ import utils.json_handler as json_handler
 import utils.image_handler as image_handler
 import cv2 as cv
 import matplotlib.pyplot as plt
-class LocalDataGenerator: 
+class LocalDataGeneratorIMU: 
     def __init__(self):
         # control inputs
         self.car_ci_accelerations = []
@@ -37,7 +37,7 @@ class LocalDataGenerator:
         self.position_vectors_in_image_coordinates = []
         self.xs = []
 
-    def generate_specific_data(self, data_type): 
+    def generate_data(self, data_type): 
         if (data_type == config.straight_x_line_name): 
             self.drive_straight_in_x_direction()
         elif(data_type == config.curve_line_name): 
@@ -182,6 +182,7 @@ class LocalDataGenerator:
         self.write_result_to_csv(config.s_curve_name_variable_velocity)
 
     def write_result_to_csv(self, type): 
+        type = type+config.imu_data_appendix
         data = {
             'acceleration_input': self.car_ci_accelerations,
             'steering_input': self.car_ci_steerings, 
@@ -192,7 +193,7 @@ class LocalDataGenerator:
             'velocities_ground_truth': self.car_gt_velocities, 
             'timestamps': self.car_gt_timestamps
         }
-        csv_handler.write_to_csv(type + config.data_suffix, data)
+        csv_handler.write_to_csv(config.paths['data_path']+type + config.data_suffix, data)
         #save_image.save_array_as_image(np.stack([self.car_gt_positions_x, self.car_gt_positions_y],axis=1),"map_image_straight_line" )
         self.create_map_image(config.image_and_image_data_prefix+type)
 
@@ -233,7 +234,7 @@ class LocalDataGenerator:
             self.map[index[1],index[0]] = 1
         self.position_vectors_in_image_coordinates = np.array(self.position_vectors_in_image_coordinates)
         # save image and transformationdata
-        image_handler.save_array_as_image(self.map*255,name+config.image_suffix)
+        image_handler.save_array_as_image(config.paths['data_path']+self.map*255,name+config.image_suffix)
         trans_data = {
             "decimal_multiplier": 10**self.accounted_decimal_places,
             "x_min": self.x_range[0],
@@ -241,7 +242,7 @@ class LocalDataGenerator:
             "x_max": self.x_range[1],
             "y_max": self.y_range[1],
         }
-        json_handler.write_to_json(name+config.image_data_suffix, trans_data)
+        json_handler.write_to_json(config.paths['data_path']+name+config.image_data_suffix, trans_data)
         self.create_distance_map(name)
 
     def create_distance_map(self,name):
@@ -251,7 +252,7 @@ class LocalDataGenerator:
             self.distance_map = cv.GaussianBlur(self.distance_map,(5,5),2)
         to_one = 1/self.distance_map.max()
         self.distance_map = self.distance_map * to_one
-        image_handler.save_array_as_image(self.distance_map*255,name+config.distance_map_suffix)
+        image_handler.save_array_as_image(config.paths['data_path']+self.distance_map*255,name+config.distance_map_suffix)
     
     def reset_lists(self): 
         # control inputs

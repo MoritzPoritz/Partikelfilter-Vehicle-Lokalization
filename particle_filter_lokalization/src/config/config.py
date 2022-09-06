@@ -8,7 +8,9 @@ image_and_image_data_prefix = 'map_image__'
 image_suffix = '__image'
 image_data_suffix = '__image_data'
 distance_map_suffix = '__distance_map'
-
+point_cloud_appendix = '__pc'
+imu_data_appendix = '__imu'
+lidar_data_appendix = '__lidar'
 # data generation specifics
 map_border = 100
 
