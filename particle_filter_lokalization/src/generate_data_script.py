@@ -1,9 +1,6 @@
 from pdb import main
-<<<<<<< HEAD
 import data_generation.local_data_generator_imu as ldg
-=======
-import data_generation.local_data_generator as ldg
->>>>>>> 4ea3b997fdfdbc551281ed62f6648c2b581aa069
+
 import argparse
 import config.config as config
 def main(): 
