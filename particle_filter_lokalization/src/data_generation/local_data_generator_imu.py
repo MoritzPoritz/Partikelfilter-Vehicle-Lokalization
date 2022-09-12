@@ -194,7 +194,6 @@ class LocalDataGeneratorIMU:
             'timestamps': self.car_gt_timestamps
         }
         csv_handler.write_to_csv(config.paths['data_path']+type + config.data_suffix, data)
-        #save_image.save_array_as_image(np.stack([self.car_gt_positions_x, self.car_gt_positions_y],axis=1),"map_image_straight_line" )
         self.create_map_image(config.image_and_image_data_prefix+type)
 
 
@@ -230,11 +229,10 @@ class LocalDataGeneratorIMU:
                 y_in_image_coordinates-self.y_range[0]
             ]
             self.position_vectors_in_image_coordinates.append(np.array([x_in_image_coordinates, y_in_image_coordinates]))
-            print(index[1])
             self.map[index[1],index[0]] = 1
         self.position_vectors_in_image_coordinates = np.array(self.position_vectors_in_image_coordinates)
         # save image and transformationdata
-        image_handler.save_array_as_image(config.paths['data_path']+self.map*255,name+config.image_suffix)
+        image_handler.save_array_as_image(self.map*255,config.paths['data_path']+name+config.image_suffix)
         trans_data = {
             "decimal_multiplier": 10**self.accounted_decimal_places,
             "x_min": self.x_range[0],
@@ -252,7 +250,7 @@ class LocalDataGeneratorIMU:
             self.distance_map = cv.GaussianBlur(self.distance_map,(5,5),2)
         to_one = 1/self.distance_map.max()
         self.distance_map = self.distance_map * to_one
-        image_handler.save_array_as_image(config.paths['data_path']+self.distance_map*255,name+config.distance_map_suffix)
+        image_handler.save_array_as_image(self.distance_map*255,config.paths['data_path']+name+config.distance_map_suffix)
     
     def reset_lists(self): 
         # control inputs

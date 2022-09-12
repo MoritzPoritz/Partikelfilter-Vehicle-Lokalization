@@ -36,6 +36,7 @@ class LocalDataGeneratorLIDAR:
         if (data_type == config.straight_x_line_name): 
             self.drive_straight_in_x_direction()
         elif(data_type == config.curve_line_name): 
+            print("Do cuce")
             self.drive_a_long_curve()
         elif(data_type == config.s_curve_name_constant_velocity): 
             self.drive_s_curve_with_constant_velocity()
@@ -50,12 +51,128 @@ class LocalDataGeneratorLIDAR:
         self.drive_s_curve_with_constant_velocity()
         self.drive_s_curve_with_variable_velocity()
 
+    def drive_s_curve_with_variable_velocity(self):
+        self.reset_lists()
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        u = np.array([0,0], dtype=float)
+        self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
+        
+        for i in range(1,2000): 
+            # set steering
+            if (i < 200 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i> 200 and i < 600 and u[1] > -config.max_steering_angle): 
+                u[1] -= 0.001
+            elif (i > 600 and i < 1000 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i > 1000 and i < 1400 and u[1] > -config.max_steering_angle): 
+                u[1] -= 0.001
+            elif (i > 1400 and i < 1800 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i > 1800 and i < 2000 and u[1] > 0): 
+                u[1] -= 0.001
+
+            # set acceleration
+            if (i < 100 and u[0] < 15): 
+                u[0] += 0.01
+            elif (i > 100 and i < 150 and u[0] > 2): 
+                u[0] -= 0.01
+            elif (i > 150 and i < 200 and u[0] > -1): 
+                if (self.xs[i-1][2] >= 0):
+                    u[0] -= 0.1
+            elif (i > 200 and i < 600 and u[0] < 20): 
+                u[0] += 0.001
+            elif(i > 600 and i < 1200): 
+                u[0] = 0
+            self.xs.append(model.F(x=self.xs[i-1],u=u))          
+            self.car_ci_accelerations.append(u[0])
+            self.car_ci_steerings.append(u[1])
+            self.car_gt_positions_x.append(self.xs[i-1][0])
+            self.car_gt_positions_y.append(self.xs[i-1][1])
+            self.car_gt_velocities.append(self.xs[i-1][2])
+            self.car_gt_timestamps.append(config.dt*i)
+            points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
+
+            for p in points:
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
+                
+            
+        self.write_result_to_csv(config.s_curve_name_variable_velocity)
+        self.save_point_cloud(config.s_curve_name_variable_velocity)
+
+    def drive_s_curve_with_constant_velocity(self):
+        self.reset_lists()
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        u = np.array([0,0], dtype=float)
+        self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
+        
+        for i in range(1,2000): 
+            if (i < 200 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i> 200 and i < 600 and u[1] > -config.max_steering_angle): 
+                u[1] -= 0.001
+            elif (i > 600 and i < 1000 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i > 1000 and i < 1400 and u[1] > -config.max_steering_angle): 
+                u[1] -= 0.001
+            elif (i > 1400 and i < 1800 and u[1] < config.max_steering_angle): 
+                u[1] += 0.001
+            elif (i > 1800 and i < 2000 and u[1] > 0): 
+                u[1] -= 0.001
+            self.xs.append(model.F(x=self.xs[i-1],u=u))          
+            self.car_ci_accelerations.append(u[0])
+            self.car_ci_steerings.append(u[1])
+            self.car_gt_positions_x.append(self.xs[i-1][0])
+            self.car_gt_positions_y.append(self.xs[i-1][1])
+            self.car_gt_velocities.append(self.xs[i-1][2])
+            self.car_gt_timestamps.append(config.dt*i)
+            points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
+
+            for p in points:
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
+                
+            
+        self.write_result_to_csv(config.s_curve_name_constant_velocity)
+        self.save_point_cloud(config.s_curve_name_constant_velocity)
+ 
+
+    def drive_a_long_curve(self):
+        self.reset_lists()
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        u = np.array([0,0], dtype=float)
+        self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
+        
+        for i in range(1,1000): 
+            u[1] += 0.0001
+            if (u[0] < 10): 
+                u[0] += 0.00001
+            elif(u[0]>10):
+                u[0] = 0
+            print(u)
+            self.xs.append(model.F(x=self.xs[i-1],u=u))          
+            self.car_ci_accelerations.append(u[0])
+            self.car_ci_steerings.append(u[1])
+            self.car_gt_positions_x.append(self.xs[i-1][0])
+            self.car_gt_positions_y.append(self.xs[i-1][1])
+            self.car_gt_velocities.append(self.xs[i-1][2])
+            self.car_gt_timestamps.append(config.dt*i)
+            points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
+
+            for p in points:
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
+                
+            
+        self.write_result_to_csv(config.curve_line_name)
+        self.save_point_cloud(config.curve_line_name)
  
     def drive_straight_in_x_direction(self):
         self.reset_lists()
 
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
-        u = np.array([0,0])
+        u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
         
         for i in range(1,1000): 
@@ -67,11 +184,9 @@ class LocalDataGeneratorLIDAR:
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
             points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
-            print(points)
             for p in points:
-                print(p)
-                self.pc_env_x.append(p[0]) + np.random.randn() * self.pc_measures_noise
-                self.pc_env_y.append(p[1]) + np.random.randn() * self.pc_measures_noise
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
                 
             
         self.write_result_to_csv(config.straight_x_line_name)
@@ -79,8 +194,8 @@ class LocalDataGeneratorLIDAR:
 
     def create_points_from_pos(self, pos, theta): 
         forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
-        perpendicular_vec1 = np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])  + pos
-        perpendicular_vec2 = np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])  + pos
+        perpendicular_vec1 = np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])*10  + pos
+        perpendicular_vec2 = np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])*10  + pos
         return np.array([perpendicular_vec1, perpendicular_vec2])
     
     def write_result_to_csv(self, type): 
