@@ -3,7 +3,7 @@ from scipy import stats
 import process_model.front_wheel_bycicle_model as fw_bycicle_model
 import config.config as config
 import data_generation.load_specific_data as load_specific_data
-import map_handling.map_handler as map_handler
+import map_handling.map_handler_imu as map_handler
 import copy
 from filterpy.monte_carlo import systematic_resample
 import utils.csv_handler as csv_handler
@@ -17,9 +17,9 @@ class ParticleFilterIMU:
         self.N = N
       
         # process model related stuff
-        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         # data related stuff
-        self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.data_suffix)
+        self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.imu_data_appendix+config.data_suffix)
         self.dm = map_handler.DistanceMap(dataset_name)
         self.Ts=self.simulation_data['timestamps'].values
         
@@ -49,7 +49,7 @@ class ParticleFilterIMU:
                 self.simulation_data['orientation_measurement'][0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.sensor_std[0], config.sensor_std[1], config.sensor_std[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std[0], config.imu_sensor_std[1], config.imu_sensor_std[1], np.deg2rad(70)])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -158,13 +158,13 @@ class ParticleFilterIMU:
             self.particles_at_t.append(copy.copy(self.particles))
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
-            self.update(z=zs[i], R=config.sensor_std)
+            self.update(z=zs[i], R=config.imu_sensor_std)
         
-            if (self.neff() < self.N/config.neff_threshold): 
+            if (self.neff() < self.N/config.imu_neff_threshold): 
 
                 resample_counter += 1
                 indexes = systematic_resample(self.weights)
-                self.weights, particles = self.resample_from_index(indexes)
+                self.weights, self.particles = self.resample_from_index(indexes)
                 assert np.allclose(self.weights, 1/self.N)
 
             if (i % 100 == 0): 
@@ -187,7 +187,7 @@ class ParticleFilterIMU:
             'xs_y': self.xs[:,1],
             'Ts': self.Ts
         }
-        csv_handler.write_to_csv('filter_results/'+self.dataset_name, data)
+        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name, data)
     
     def evaluate(self): 
         rx = self.xs[:,0] - self.ground_truth[:,0]

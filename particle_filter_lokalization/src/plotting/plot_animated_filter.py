@@ -1,7 +1,8 @@
+import webbrowser
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-def plot_results_animated(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db): 
+def plot_results_animated_imu(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db): 
         
     print("Particles: ",particles.dtype)
     print("weights: ",weights.dtype)
@@ -36,6 +37,48 @@ def plot_results_animated(particles, weights, xs, ground_truth, dm, Ts, mse, mse
         #plotlines
         ax1.plot(np.array(image_xs_list)[:,0], np.array(image_xs_list)[:,1], color="red", label="estimation")
         ax1.plot(np.array(image_gt_list)[:,0], np.array(image_gt_list)[:,1], color="green", label="ground truth")
+
+        ax1.legend()
+      
+        plt.title("MSE: " + '{0:.3g}'.format(mse) + " - MSE dB: " +'{0:.3g}'.format(mse_db) + " - At: " + '{0:.3g}'.format(Ts[i]))
+        plt.legend()
+
+
+    anim = FuncAnimation(fig, animate, frames=len(xs), interval=1/10, repeat=True)
+    plt.show()
+
+
+
+def plot_results_animated_lidar(particles, weights, xs, ground_truth, Ts, mse, mse_db, point_cloud): 
+        
+    print("Particles: ",particles.dtype)
+    print("weights: ",weights.dtype)
+    print("xs: ",xs.dtype)
+    print("ground_truth: ",ground_truth.dtype)
+    fig, ax1 = plt.subplots()
+    
+    xs = np.array(xs)
+    ground_truth = np.array(ground_truth)
+    particles = np.array(particles)
+    weights = np.array(weights)
+    print(xs)
+    def animate(i):
+        # First convert data to image coordinates
+        
+        
+
+        # than plot the data
+        ax1.clear()
+        ax1.scatter(point_cloud[:,0], point_cloud[:,1], s=0.2, c="black")
+
+        ax1.set_title("Partikel filter animation")
+        ax1.scatter(particles[i][:,0], particles[i][:,1], color="b", label="particles")#, s = weights[i] * 1000)
+        #ax1.plot(weights[i][:,0], weights[i][:,1], c = "yellow")
+        ax1.scatter(xs[i,0], xs[i,1], color="red", label="estimation")
+        #ax1.scatter(ground_truth[i,0], ground_truth[i,1], color="green", label="ground truth")
+        #plotlines
+        ax1.plot(xs[:i,0], xs[:i,1], color="red", label="estimation")
+        ax1.plot(ground_truth[:i,0], ground_truth[:i,1], color="green", label="ground truth")
 
         ax1.legend()
       

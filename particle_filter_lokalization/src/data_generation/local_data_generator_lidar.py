@@ -1,3 +1,4 @@
+import csv
 import json
 from pickletools import uint8
 from turtle import title
@@ -11,6 +12,9 @@ import utils.json_handler as json_handler
 import utils.image_handler as image_handler
 import cv2 as cv
 import matplotlib.pyplot as plt
+import open3d as o3d
+
+
 class LocalDataGeneratorLIDAR: 
     def __init__(self):
         # control inputs
@@ -29,31 +33,40 @@ class LocalDataGeneratorLIDAR:
         self.pc_env_y = []
         self.pc_creation_noise = .2
         # point cloud measurement
-        self.pc_measures = []
-        self.pc_measures_noise = 0.3
+        self.pc_creation_noise = 0.3
+        self.pc_measure_noise = 0.6
+        self.measurement_paths = []
+        self.measurements = []
+        self.measurement_indices = []
 
     def generate_data(self, data_type): 
         if (data_type == config.straight_x_line_name): 
             self.drive_straight_in_x_direction()
+        
         elif(data_type == config.curve_line_name): 
-            print("Do cuce")
             self.drive_a_long_curve()
+
         elif(data_type == config.s_curve_name_constant_velocity): 
             self.drive_s_curve_with_constant_velocity()
+        
         elif(data_type == config.s_curve_name_variable_velocity): 
             self.drive_s_curve_with_variable_velocity()
+        
         elif(data_type == "all"): 
             self.generate_all_data()
 
     def generate_all_data(self): 
         self.drive_straight_in_x_direction()
+        self.reset_lists()
         self.drive_a_long_curve()
+        self.reset_lists()
         self.drive_s_curve_with_constant_velocity()
+        self.reset_lists()
         self.drive_s_curve_with_variable_velocity()
 
     def drive_s_curve_with_variable_velocity(self):
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
         
@@ -94,16 +107,18 @@ class LocalDataGeneratorLIDAR:
             points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
 
             for p in points:
-                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
-                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
-                
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
+            for p in points: 
+                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
+                self.measurement_indices.append(i)
             
         self.write_result_to_csv(config.s_curve_name_variable_velocity)
         self.save_point_cloud(config.s_curve_name_variable_velocity)
 
     def drive_s_curve_with_constant_velocity(self):
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
         
@@ -130,9 +145,11 @@ class LocalDataGeneratorLIDAR:
             points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
 
             for p in points:
-                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
-                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
-                
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
+            for p in points: 
+                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
+                self.measurement_indices.append(i)  
             
         self.write_result_to_csv(config.s_curve_name_constant_velocity)
         self.save_point_cloud(config.s_curve_name_constant_velocity)
@@ -140,7 +157,7 @@ class LocalDataGeneratorLIDAR:
 
     def drive_a_long_curve(self):
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
         
@@ -150,7 +167,6 @@ class LocalDataGeneratorLIDAR:
                 u[0] += 0.00001
             elif(u[0]>10):
                 u[0] = 0
-            print(u)
             self.xs.append(model.F(x=self.xs[i-1],u=u))          
             self.car_ci_accelerations.append(u[0])
             self.car_ci_steerings.append(u[1])
@@ -161,9 +177,11 @@ class LocalDataGeneratorLIDAR:
             points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
 
             for p in points:
-                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
-                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
-                
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
+            for p in points: 
+                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
+                self.measurement_indices.append(i)
             
         self.write_result_to_csv(config.curve_line_name)
         self.save_point_cloud(config.curve_line_name)
@@ -171,7 +189,7 @@ class LocalDataGeneratorLIDAR:
     def drive_straight_in_x_direction(self):
         self.reset_lists()
 
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
         
@@ -185,13 +203,18 @@ class LocalDataGeneratorLIDAR:
             self.car_gt_timestamps.append(config.dt*i)
             points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
             for p in points:
-                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_measures_noise)
-                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_measures_noise)
+                self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
+                self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
+
+            for p in points: 
+                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
+                self.measurement_indices.append(i)
                 
             
         self.write_result_to_csv(config.straight_x_line_name)
         self.save_point_cloud(config.straight_x_line_name)
 
+    
     def create_points_from_pos(self, pos, theta): 
         forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
         perpendicular_vec1 = np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])*10  + pos
@@ -200,7 +223,7 @@ class LocalDataGeneratorLIDAR:
     
     def write_result_to_csv(self, type): 
         type = type+config.lidar_data_appendix
-        data = {
+        basic_data = {
             'acceleration_input': self.car_ci_accelerations,
             'steering_input': self.car_ci_steerings,              
             'positions_x_ground_truth': self.car_gt_positions_x,
@@ -208,18 +231,33 @@ class LocalDataGeneratorLIDAR:
             'velocities_ground_truth': self.car_gt_velocities, 
             'timestamps': self.car_gt_timestamps
         }
-        csv_handler.write_to_csv(config.paths['data_path']+type + config.data_suffix, data)
+        csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
 
-        return True
+        self.measurements = np.array(self.measurements)
+        measure_data = {
+            'index': self.measurement_indices, 
+            'pc_x': self.measurements[:,0],
+            'pc_y': self.measurements[:,1],
+        }
+        csv_handler.write_structured_data_to_csv(config.paths['pc_measurements_path'] + type+config.point_cloud_measured_appendix, measure_data)
 
     def save_point_cloud(self, type): 
         data = {
             'pc_x': self.pc_env_x,
             'pc_y': self.pc_env_y
         }
-        csv_handler.write_to_csv(config.paths['data_path']+type+config.point_cloud_appendix, data)
+        csv_handler.write_structured_data_to_csv(config.paths['data_path']+type+config.point_cloud_appendix, data)
+
+        #xyz = np.stack([self.pc_env_x, self.pc_env_y, np.full((len(self.pc_env_x),), 0)],axis=1)
+        #pcd = o3d.geometry.PointCloud()
+        #pcd.points = o3d.utility.Vector3dVector(xyz)
+        #o3d.io.write_point_cloud(config.paths['data_path']+type+config.point_cloud_appendix, pcd)
+
+ 
+
 
     def reset_lists(self): 
+        print("Resetting the lists")
         # control inputs
         self.car_ci_accelerations = []
         self.car_ci_steerings = []
@@ -231,9 +269,11 @@ class LocalDataGeneratorLIDAR:
         self.car_gt_timestamps = []
 
         # measurements
-        self.car_m_accelerations = []
-        self.car_m_orientations = []
+        self.measurement_indices = []
+        self.measurements = []
 
         # pc
         self.pc_env_x = []
         self.pc_env_y = []
+
+        self.xs = []

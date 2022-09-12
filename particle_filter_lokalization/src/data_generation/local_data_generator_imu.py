@@ -57,7 +57,7 @@ class LocalDataGeneratorIMU:
 
     def drive_a_long_curve(self): 
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
 
         u = np.array([0,0], dtype=float)
@@ -75,15 +75,15 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())   
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())   
             
         self.write_result_to_csv(config.curve_line_name)
 
     def drive_straight_in_x_direction(self):
         self.reset_lists()
 
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0])
         self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
         for i in range(1,1000): 
@@ -94,14 +94,14 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())   
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())   
             
         self.write_result_to_csv(config.straight_x_line_name)
 
     def drive_s_curve_with_constant_velocity(self): 
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
         
@@ -127,14 +127,14 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())
         
         self.write_result_to_csv(config.s_curve_name_constant_velocity)
 
     def drive_s_curve_with_variable_velocity(self): 
         self.reset_lists()
-        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
         
@@ -176,8 +176,8 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.sensor_std[1]*np.random.randn())
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())
         
         self.write_result_to_csv(config.s_curve_name_variable_velocity)
 
@@ -193,7 +193,7 @@ class LocalDataGeneratorIMU:
             'velocities_ground_truth': self.car_gt_velocities, 
             'timestamps': self.car_gt_timestamps
         }
-        csv_handler.write_to_csv(config.paths['data_path']+type + config.data_suffix, data)
+        csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, data)
         self.create_map_image(config.image_and_image_data_prefix+type)
 
 

@@ -153,4 +153,4 @@ class MapPointCloudRetriever:
             'rot_pitch': self.sensor_rotations[:,1], 
             'rot_yaw': self.sensor_rotations[:,2]
         }
-        csv_handler.write_to_csv(config.paths['map_path']+'map_pc', data)
+        csv_handler.write_structured_data_to_csv(config.paths['map_path']+'map_pc', data)

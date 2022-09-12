@@ -39,7 +39,7 @@ def main():
             'mse': evaluation_results[:,1],
             'mse_db': evaluation_results[:,2]
         }    
-        csv_handler.write_to_csv('evaluation_results\\results', data)
+        csv_handler.write_structured_data_to_csv('evaluation_results\\results', data)
     else: 
         evaluator = evaluation.ParticleFilterEvaluator(args.road_type)
         evaluator.evaluate_filter_performance()

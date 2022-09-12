@@ -1,43 +1,25 @@
 import numpy as np
-from scipy import stats
 import process_model.front_wheel_bycicle_model as fw_bycicle_model
 import config.config as config
 import data_generation.load_specific_data as load_specific_data
-import map_handling.map_handler as map_handler
 import copy
 from filterpy.monte_carlo import systematic_resample
 import utils.csv_handler as csv_handler
 
 
-class ParticleFilterIMU: 
-
-
+class ParticleFilterLIDAR: 
     def __init__(self, N,dataset_name):
         # particle filte related stuff
         self.N = N
       
         # process model related stuff
-        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.std, dt=config.dt)
+        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         # data related stuff
-        self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.data_suffix)
+        self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.lidar_data_appendix+config.data_suffix)
+        self.lidar_measurements = load_specific_data.load_lidar_measurements(dataset_name+config.lidar_data_appendix+config.point_cloud_measured_appendix)
+
         self.Ts=self.simulation_data['timestamps'].values
-        
-        # create ranges
-        x_min = self.dm.image_data['x_min']
-        x_max = self.dm.image_data['x_max']
-        
-        y_min = self.dm.image_data['y_min']
-        y_max = self.dm.image_data['y_max']
-        
-        self.x_range = [x_min, x_max]
-        self.y_range = [y_min, y_max]
-    
-        self.v_range = [0, 10]
-        self.a_range = [0, 10]
-
-        self.theta_range = [0,2*np.pi]
-        self.delta_range = [self.simulation_data['steering_input'].min(), self.simulation_data['steering_input'].max()]
-
+        self.point_cloud = load_specific_data.load_point_cloud(dataset_name+config.point_cloud_appendix)
         #self.particles = self.create_uniform_particles()
         self.particles = self.create_gaussian_particles(
             np.array([
@@ -45,10 +27,10 @@ class ParticleFilterIMU:
                 self.simulation_data['positions_y_ground_truth'][0],
                 self.simulation_data['velocities_ground_truth'][0], 
                 self.simulation_data['acceleration_input'][0],
-                self.simulation_data['orientation_measurement'][0],
+                np.random.uniform(0, np.pi*2, 1)[0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.sensor_std[0], config.sensor_std[1], config.sensor_std[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std[0], config.imu_sensor_std[1], config.imu_sensor_std[1], np.deg2rad(70)])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -79,27 +61,31 @@ class ParticleFilterIMU:
         particles[:, 5] %= 2 * np.pi
         return particles
 
+    def get_point_cloud_distance(self, pc_1, pc_2):
+        smallest_dists = []
+        for p in pc_1: 
+            smallest = 10000000
+            for p2 in pc_2: 
+                if (np.linalg.norm(p-p2) < smallest): 
+                    smallest = np.linalg.norm(p-p2)
+            smallest_dists.append(smallest)
+        return np.array(smallest_dists).mean()
+
     def update(self, z, R):
-        # acceleration likelihood
-        acceleration_likelihoods = stats.norm(self.particles[:,3], R[0]).pdf(z[0])
-        # orientation likelihood --> Check if this should be in filter
-        rotation_likelihoods = stats.norm(self.particles[:,4], R[2]).pdf(z[1])
-        particles_image_coords = np.array(list(map(self.dm.world_coordinates_to_image, self.particles[:, 0:2])))
-
+        # find the lidar pointcloud for each particle than calculate its distances to the measurement
         distances = []
-        for p in particles_image_coords: 
-            if (p[0] < self.dm.distance_map.shape[1] and p[0] > 0 and p[1] < self.dm.distance_map.shape[0] and p[1] > 0): 
-                value = self.dm.get_distance_from_worlds(p)
-             
-                distances.append(value)
-            else:
-                distances.append(0)
-        distances = np.array(distances, dtype=object)
-        average = np.array((acceleration_likelihoods + rotation_likelihoods + distances) / 3)
-        #average = np.array((rotation_likelihoods + distances) / 2)
+        for p in self.particles[:,:2]: 
+            diff = p-self.point_cloud
+            pc_in_range = self.point_cloud[np.linalg.norm(diff, axis=1) < config.lidar_range]
+            if (len(pc_in_range) > 0):
+                distances.append(self.get_point_cloud_distance(z, pc_in_range))
+            else: 
+                distances.append(1000)
+        distances = np.array(distances, dtype=float)
 
-        self.weights = self.weights * average 
-        
+        distances = distances.max() - distances
+
+        self.weights = self.weights * distances 
         self.weights += 1.e-300       
         self.weights /= sum(self.weights) # normalize
         #return weights
@@ -132,25 +118,26 @@ class ParticleFilterIMU:
     '''
     main function running the pf
     '''
-    def run_pf_imu(self):
+    def run_pf_lidar(self):
     
-        zs = np.stack([self.simulation_data['acceleration_measurement'], self.simulation_data['orientation_measurement']], axis=1)
+        #zs = self.simulation_data['measurements'].values
         us = np.stack([self.simulation_data['acceleration_input'], self.simulation_data['steering_input']], axis=1)
         
         
         resample_counter = 0
         
-        for i,u in enumerate(self.Ts): 
+        for i in range(len(self.Ts)): 
             self.particles_at_t.append(copy.copy(self.particles))
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
-            self.update(z=zs[i], R=config.sensor_std)
-        
-            if (self.neff() < self.N/config.neff_threshold): 
+
+            z = self.lidar_measurements[self.lidar_measurements['index'] == i][['pc_x', 'pc_y']].values
+            self.update(z=z, R=config.lidar_sensor_std)
+            if (self.neff() < self.N/config.lidar_neff_threshold): 
 
                 resample_counter += 1
                 indexes = systematic_resample(self.weights)
-                self.weights, particles = self.resample_from_index(indexes)
+                self.weights, self.particles = self.resample_from_index(indexes)
                 assert np.allclose(self.weights, 1/self.N)
 
             if (i % 100 == 0): 
@@ -173,7 +160,7 @@ class ParticleFilterIMU:
             'xs_y': self.xs[:,1],
             'Ts': self.Ts
         }
-        csv_handler.write_to_csv('filter_results/'+self.dataset_name, data)
+        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name, data)
     
     def evaluate(self): 
         rx = self.xs[:,0] - self.ground_truth[:,0]
