@@ -17,16 +17,13 @@ def main():
         help='road type u wish to generate data for')
     args = argparser.parse_args()
 
-    filter_results_path = os.path.abspath(os.path.join(
-                  os.path.dirname('filter_results'), 
-                  os.pardir)
-    ) + "\\data\\filter_results\\"
-     
+ 
     
     if (args.road_type == "all"):
         evaluation_results = []
-        results = os.listdir(filter_results_path)
+        results = os.listdir(config.paths['filter_results_path'])
         for r in results: 
+            
             name = r.split(".")[0]
             print(name)
             evaluator = evaluation.ParticleFilterEvaluator("\\filter_results\\" + name)

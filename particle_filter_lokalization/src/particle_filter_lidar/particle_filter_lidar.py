@@ -5,6 +5,8 @@ import data_generation.load_specific_data as load_specific_data
 import copy
 from filterpy.monte_carlo import systematic_resample
 import utils.csv_handler as csv_handler
+from scipy.spatial.distance import directed_hausdorff
+import math
 
 
 class ParticleFilterLIDAR: 
@@ -13,7 +15,7 @@ class ParticleFilterLIDAR:
         self.N = N
       
         # process model related stuff
-        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
+        self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.lidar_std, dt=config.dt)
         # data related stuff
         self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.lidar_data_appendix+config.data_suffix)
         self.lidar_measurements = load_specific_data.load_lidar_measurements(dataset_name+config.lidar_data_appendix+config.point_cloud_measured_appendix)
@@ -61,26 +63,23 @@ class ParticleFilterLIDAR:
         particles[:, 5] %= 2 * np.pi
         return particles
 
-    def get_point_cloud_distance(self, pc_1, pc_2):
-        smallest_dists = []
-        for p in pc_1: 
-            smallest = 10000000
-            for p2 in pc_2: 
-                if (np.linalg.norm(p-p2) < smallest): 
-                    smallest = np.linalg.norm(p-p2)
-            smallest_dists.append(smallest)
-        return np.array(smallest_dists).mean()
-
+    
     def update(self, z, R):
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
         distances = []
         for p in self.particles[:,:2]: 
             diff = p-self.point_cloud
             pc_in_range = self.point_cloud[np.linalg.norm(diff, axis=1) < config.lidar_range]
-            if (len(pc_in_range) > 0):
-                distances.append(self.get_point_cloud_distance(z, pc_in_range))
+            
+            if (len(pc_in_range) != len(z) and len(pc_in_range) == 0 or len(z) == 0): 
+                distance = 1000
+            elif (len(pc_in_range) == 0 and len(z) == 0): 
+                distance = 1
             else: 
-                distances.append(1000)
+                distance = directed_hausdorff(z, pc_in_range)[0]
+            if (distance == math.inf): 
+                print(z, pc_in_range)
+            distances.append(distance)
         distances = np.array(distances, dtype=float)
 
         distances = distances.max() - distances
@@ -160,7 +159,7 @@ class ParticleFilterLIDAR:
             'xs_y': self.xs[:,1],
             'Ts': self.Ts
         }
-        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name, data)
+        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name+config.lidar_data_appendix, data)
     
     def evaluate(self): 
         rx = self.xs[:,0] - self.ground_truth[:,0]

@@ -187,7 +187,7 @@ class ParticleFilterIMU:
             'xs_y': self.xs[:,1],
             'Ts': self.Ts
         }
-        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name, data)
+        csv_handler.write_structured_data_to_csv(config.paths['filter_results_path']+self.dataset_name+config.imu_data_appendix, data)
     
     def evaluate(self): 
         rx = self.xs[:,0] - self.ground_truth[:,0]

@@ -14,7 +14,7 @@ imu_data_appendix = '__imu'
 lidar_data_appendix = '__lidar'
 # data generation specifics
 map_border = 100
-N = 5
+N = 10
 # stuff for particle filter
 # acc, orientation, distance
 imu_sensor_std = [.3, .3, .3]
@@ -23,7 +23,7 @@ imu_neff_threshold = 20
 imu_std = [0, 0]
 
 lidar_sensor_std = .3
-lidar_neff_threshold = 20
+lidar_neff_threshold = 10
 lidar_std = [0, 0]
 
 v_range = [0, 10]

@@ -24,19 +24,16 @@ def main():
 
     if (args.filter_type == "imu"):
         if(args.road_type == 'all'): 
-            filter_results_path = os.path.abspath(os.path.join(
-                    os.path.dirname('filter_results'), 
-                    os.pardir)
-            ) + "\\data\\"
-            all_data = os.listdir(filter_results_path)
+            
+            all_data = os.listdir(config.paths["data_path"])
             for file in all_data: 
                 if (file.endswith(".csv")): 
-                    
-                    road_type_name = file.split("__")[0]
-                    pf = pf_imu.ParticleFilterIMU(config.N, road_type_name)
-                    pf.run_pf_imu()
-                    pf.evaluate()
-                    pf.save_result()
+                    if ("imu__data" in file):
+                        road_type_name = file.split("__")[0]
+                        pf = pf_imu.ParticleFilterIMU(config.N, road_type_name)
+                        pf.run_pf_imu()
+                        pf.evaluate()
+                        pf.save_result()
         else:
             if (args.road_type == config.straight_x_line_name): 
                 pf = pf_imu.ParticleFilterIMU(config.N, config.straight_x_line_name)
@@ -53,21 +50,17 @@ def main():
             pf.save_result()
             animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db)
     elif (args.filter_type == "lidar"):
-        print("RUN LIDAR")
         if(args.road_type == 'all'): 
-            filter_results_path = os.path.abspath(os.path.join(
-                    os.path.dirname('filter_results'), 
-                    os.pardir)
-            ) + "\\data\\"
-            all_data = os.listdir(filter_results_path)
+            
+            all_data = os.listdir(config.paths['data_path'])
             for file in all_data: 
                 if (file.endswith(".csv")): 
-                    
-                    road_type_name = file.split("__")[0]
-                    pf = pf_lidar.ParticleFilterLIDAR(config.N, road_type_name)
-                    pf.run_pf_lidar()
-                    pf.evaluate()
-                    pf.save_result()
+                    if ("lidar__data" in file):
+                        road_type_name = file.split("__")[0]
+                        pf = pf_lidar.ParticleFilterLIDAR(config.N, road_type_name)
+                        pf.run_pf_lidar()
+                        pf.evaluate()
+                        pf.save_result()
         else:
             if (args.road_type == config.straight_x_line_name): 
                 pf = pf_lidar.ParticleFilterLIDAR(config.N, config.straight_x_line_name)

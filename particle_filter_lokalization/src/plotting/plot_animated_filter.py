@@ -72,7 +72,7 @@ def plot_results_animated_lidar(particles, weights, xs, ground_truth, Ts, mse, m
         ax1.scatter(point_cloud[:,0], point_cloud[:,1], s=0.2, c="black")
 
         ax1.set_title("Partikel filter animation")
-        ax1.scatter(particles[i][:,0], particles[i][:,1], color="b", label="particles")#, s = weights[i] * 1000)
+        ax1.scatter(particles[i][:,0], particles[i][:,1], color="b", label="particles", s = weights[i] * 1000)
         #ax1.plot(weights[i][:,0], weights[i][:,1], c = "yellow")
         ax1.scatter(xs[i,0], xs[i,1], color="red", label="estimation")
         #ax1.scatter(ground_truth[i,0], ground_truth[i,1], color="green", label="ground truth")
