@@ -1,3 +1,4 @@
+from ctypes.wintypes import PCHAR
 import numpy as np
 import process_model.front_wheel_bycicle_model as fw_bycicle_model
 import config.config as config
@@ -7,6 +8,7 @@ from filterpy.monte_carlo import systematic_resample
 import utils.csv_handler as csv_handler
 from scipy.spatial.distance import directed_hausdorff
 import math
+from scipy import stats
 
 
 class ParticleFilterLIDAR: 
@@ -66,13 +68,29 @@ class ParticleFilterLIDAR:
     
     def update(self, z, R):
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
+
+        weights = []
+        for p in self.particles[:,:2]: 
+            # preparing particle measurements
+            p_subs = p - self.point_cloud
+            p_dists = np.linalg.norm(p_subs, axis=1)
+            p_in_range = p_dists[p_dists < config.lidar_range]
+            p_mode = stats.mode(p_in_range)
+            # preparing actual measurement
+            z_sub = p-z
+            print(z)
+            z_dist = np.linalg.norm(z_sub, axis=1)
+            z_mode = stats.mode(z_dist)
+            
+            weights.append(stats.norm(p_mode, config.lidar_std).pdf(z_mode))
+        '''
         distances = []
         for p in self.particles[:,:2]: 
             diff = p-self.point_cloud
             pc_in_range = self.point_cloud[np.linalg.norm(diff, axis=1) < config.lidar_range]
             
             if (len(pc_in_range) != len(z) and len(pc_in_range) == 0 or len(z) == 0): 
-                distance = 1000
+                distance = 100
             elif (len(pc_in_range) == 0 and len(z) == 0): 
                 distance = 1
             else: 
@@ -83,8 +101,9 @@ class ParticleFilterLIDAR:
         distances = np.array(distances, dtype=float)
 
         distances = distances.max() - distances
+        '''
 
-        self.weights = self.weights * distances 
+        self.weights = self.weights * weights
         self.weights += 1.e-300       
         self.weights /= sum(self.weights) # normalize
         #return weights

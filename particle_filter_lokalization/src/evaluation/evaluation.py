@@ -10,6 +10,8 @@ class ParticleFilterEvaluator:
         self.mse = 0
         self.mse_db = 0
         self.se_over_time = 0
+        
+
 
     def evaluate_filter_performance(self): 
         rx = self.dataset['gt_x'] - self.dataset['xs_x']

@@ -17,6 +17,9 @@ class FrontWheelBycicleModel:
         
          # calculate new velocity with new acceleration 
         v_next = x[2] + (x[3] * self.dt)
+        # ensuring velocity gets not negative 
+        if (v_next < 0): 
+            v_next = 0
         # calculate new acceleration 
         a_next = u[0] + (np.random.randn() * self.control_input_std[0])
         # calculate new theta angle

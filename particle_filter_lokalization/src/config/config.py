@@ -14,7 +14,7 @@ imu_data_appendix = '__imu'
 lidar_data_appendix = '__lidar'
 # data generation specifics
 map_border = 100
-N = 10
+N = 1000
 # stuff for particle filter
 # acc, orientation, distance
 imu_sensor_std = [.3, .3, .3]
@@ -46,7 +46,8 @@ paths = {
     'data_path' : "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\",
     'filter_results_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\filter_results\\",
     'map_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\map\\",
-    'pc_measurements_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\pc_measurements\\"
+    'pc_measurements_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\pc_measurements\\",
+    'evaluation_results_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\evaluation_results\\"
 }
 
 
