@@ -13,6 +13,7 @@ import utils.image_handler as image_handler
 import cv2 as cv
 import matplotlib.pyplot as plt
 import open3d as o3d
+from scipy import stats
 
 
 class LocalDataGeneratorLIDAR: 
@@ -35,9 +36,7 @@ class LocalDataGeneratorLIDAR:
         # point cloud measurement
         self.pc_creation_noise = 0.3
         self.pc_measure_noise = 0.6
-        self.measurement_paths = []
-        self.measurements = []
-        self.measurement_indices = []
+        self.measurement_distances_mode = []
 
     def generate_data(self, data_type): 
         if (data_type == config.straight_x_line_name): 
@@ -109,9 +108,15 @@ class LocalDataGeneratorLIDAR:
             for p in points:
                 self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
                 self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
-            for p in points: 
-                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
-                self.measurement_indices.append(i)
+        
+        pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
+        positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
+        # create measurements
+        for p in positions:
+            subs = p - pc
+            dists = np.linalg.norm(subs, axis=1)
+            in_range = dists[dists < config.lidar_range]
+            self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
             
         self.write_result_to_csv(config.s_curve_name_variable_velocity)
         self.save_point_cloud(config.s_curve_name_variable_velocity)
@@ -142,18 +147,24 @@ class LocalDataGeneratorLIDAR:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            points = self.create_points_from_pos(np.array([self.xs[i-1][0], self.xs[i-1][1]]), self.xs[i-1][4])
+            current_position = np.array([self.xs[i-1][0], self.xs[i-1][1]])
+            points = self.create_points_from_pos(current_position, self.xs[i-1][4])
 
             for p in points:
                 self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
                 self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
-            for p in points: 
-                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
-                self.measurement_indices.append(i)  
-            
+        pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
+        positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
+        # create measurements
+        for p in positions:
+            subs = p - pc
+            dists = np.linalg.norm(subs, axis=1)
+            in_range = dists[dists < config.lidar_range]
+            self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
         self.write_result_to_csv(config.s_curve_name_constant_velocity)
         self.save_point_cloud(config.s_curve_name_constant_velocity)
- 
+
+        # create a circular measurement for each positions  
 
     def drive_a_long_curve(self):
         self.reset_lists()
@@ -179,10 +190,16 @@ class LocalDataGeneratorLIDAR:
             for p in points:
                 self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
                 self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
-            for p in points: 
-                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
-                self.measurement_indices.append(i)
-            
+
+        pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
+        positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
+        # create measurements
+        for p in positions:
+            subs = p - pc
+            dists = np.linalg.norm(subs, axis=1)
+            in_range = dists[dists < config.lidar_range]
+            self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
+                    
         self.write_result_to_csv(config.curve_line_name)
         self.save_point_cloud(config.curve_line_name)
  
@@ -206,9 +223,14 @@ class LocalDataGeneratorLIDAR:
                 self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
                 self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
 
-            for p in points: 
-                self.measurements.append(p + np.random.randn(2,1)[0] * self.pc_measure_noise)
-                self.measurement_indices.append(i)
+        pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
+        positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
+        # create measurements
+        for p in positions:
+            subs = p - pc
+            dists = np.linalg.norm(subs, axis=1)
+            in_range = dists[dists < config.lidar_range]
+            self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
                 
             
         self.write_result_to_csv(config.straight_x_line_name)
@@ -228,19 +250,13 @@ class LocalDataGeneratorLIDAR:
             'steering_input': self.car_ci_steerings,              
             'positions_x_ground_truth': self.car_gt_positions_x,
             'positions_y_ground_truth': self.car_gt_positions_y,
-            'velocities_ground_truth': self.car_gt_velocities, 
+            'velocities_ground_truth': self.car_gt_velocities,
+            'measurements': self.measurement_distances_mode, 
             'timestamps': self.car_gt_timestamps
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
 
-        self.measurements = np.array(self.measurements)
-        measure_data = {
-            'index': self.measurement_indices, 
-            'pc_x': self.measurements[:,0],
-            'pc_y': self.measurements[:,1],
-        }
-        csv_handler.write_structured_data_to_csv(config.paths['pc_measurements_path'] + type+config.point_cloud_measured_appendix, measure_data)
-
+        
     def save_point_cloud(self, type): 
         data = {
             'pc_x': self.pc_env_x,
@@ -257,7 +273,6 @@ class LocalDataGeneratorLIDAR:
 
 
     def reset_lists(self): 
-        print("Resetting the lists")
         # control inputs
         self.car_ci_accelerations = []
         self.car_ci_steerings = []
@@ -269,8 +284,7 @@ class LocalDataGeneratorLIDAR:
         self.car_gt_timestamps = []
 
         # measurements
-        self.measurement_indices = []
-        self.measurements = []
+        self.measurement_distances_mode = []
 
         # pc
         self.pc_env_x = []

@@ -12,6 +12,7 @@ point_cloud_appendix = '__pc'
 point_cloud_measured_appendix = '__pcm'
 imu_data_appendix = '__imu'
 lidar_data_appendix = '__lidar'
+map_data_appendix = '__map_data'
 # data generation specifics
 map_border = 100
 N = 1000

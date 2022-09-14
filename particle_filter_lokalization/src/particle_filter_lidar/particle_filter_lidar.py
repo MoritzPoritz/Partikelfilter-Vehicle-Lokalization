@@ -20,7 +20,7 @@ class ParticleFilterLIDAR:
         self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.lidar_std, dt=config.dt)
         # data related stuff
         self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.lidar_data_appendix+config.data_suffix)
-        self.lidar_measurements = load_specific_data.load_lidar_measurements(dataset_name+config.lidar_data_appendix+config.point_cloud_measured_appendix)
+        #self.lidar_measurements = load_specific_data.load_lidar_measurements(dataset_name+config.lidar_data_appendix+config.point_cloud_measured_appendix)
 
         self.Ts=self.simulation_data['timestamps'].values
         self.point_cloud = load_specific_data.load_point_cloud(dataset_name+config.point_cloud_appendix)
@@ -70,19 +70,19 @@ class ParticleFilterLIDAR:
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
 
         weights = []
+        
+
         for p in self.particles[:,:2]: 
             # preparing particle measurements
             p_subs = p - self.point_cloud
             p_dists = np.linalg.norm(p_subs, axis=1)
             p_in_range = p_dists[p_dists < config.lidar_range]
-            p_mode = stats.mode(p_in_range)
-            # preparing actual measurement
-            z_sub = p-z
-            print(z)
-            z_dist = np.linalg.norm(z_sub, axis=1)
-            z_mode = stats.mode(z_dist)
-            
-            weights.append(stats.norm(p_mode, config.lidar_std).pdf(z_mode))
+            if (len(p_in_range > 0)):
+                p_mode = stats.mode(p_in_range)[0][0]
+                weight = stats.norm(p_mode, config.lidar_sensor_std).pdf(z)
+                weights.append(weight)
+            else: 
+                weights.append(0)
         '''
         distances = []
         for p in self.particles[:,:2]: 
@@ -138,7 +138,7 @@ class ParticleFilterLIDAR:
     '''
     def run_pf_lidar(self):
     
-        #zs = self.simulation_data['measurements'].values
+        zs = self.simulation_data['measurements'].values
         us = np.stack([self.simulation_data['acceleration_input'], self.simulation_data['steering_input']], axis=1)
         
         
@@ -149,8 +149,8 @@ class ParticleFilterLIDAR:
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
 
-            z = self.lidar_measurements[self.lidar_measurements['index'] == i][['pc_x', 'pc_y']].values
-            self.update(z=z, R=config.lidar_sensor_std)
+            
+            self.update(z=zs[i], R=config.lidar_sensor_std)
             if (self.neff() < self.N/config.lidar_neff_threshold): 
 
                 resample_counter += 1
