@@ -7,10 +7,17 @@ class DistanceMap:
         self.map_name = map_name
         self.image_data = json_handler.json_to_dict(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.image_data_suffix)
         self.distance_map = np.array(image_handler.image_to_array(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.distance_map_suffix))
+        self.scale = 0.63
 
-    def world_coordinates_to_image(self, coordinates):
-        x_image = int(coordinates[0] * self.image_data['decimal_multiplier'] - self.image_data['x_min'])
-        y_image = int(coordinates[1] * self.image_data['decimal_multiplier'] - self.image_data['y_min'])
+        self.translate_x = 149
+        self.translate_y = 61
+
+    def world_coordinates_to_image(self,world_point):
+        return world_point*self.scale + np.array([self.translate_x, self.translate_y])   
+    
+    #def world_coordinates_to_image(self, coordinates):
+    #    x_image = int(coordinates[0] * self.image_data['decimal_multiplier'] - self.image_data['x_min'])
+    #    y_image = int(coordinates[1] * self.image_data['decimal_multiplier'] - self.image_data['y_min'])
 
         return np.array([x_image, y_image])
 

@@ -62,7 +62,7 @@ class MapRetriever:
 
         actor_list = []
     
-        spawn_point_index = 124
+        spawn_point_index = 0
         # set world settings, synchronous mode and delta seconds
         settings = self.world.get_settings()
         if not settings.synchronous_mode:
@@ -81,22 +81,26 @@ class MapRetriever:
         bp_vehicle = blueprint_library.filter('mustang')[0]
         transform = self.world.get_map().get_spawn_points()[spawn_point_index]
         spawn_points = self.world.get_map().get_spawn_points()
-        # draw reference points
-        self.debug.draw_point(spawn_points[spawn_point_index].location, 1, carla.Color(255, 0,0), 0)
-        self.debug.draw_string(spawn_points[spawn_point_index].location, str(spawn_points[spawn_point_index].location),True, carla.Color(255,0,0), 99999999999999990)
-        
-        self.debug.draw_point(spawn_points[0].location, 1, carla.Color(255, 0,0), 0)
-        self.debug.draw_string(spawn_points[0].location, str(spawn_points[0].location),True, carla.Color(255,0,0), 99999999999999990)
-        
-        self.debug.draw_point(spawn_points[50].location, 1, carla.Color(255, 0,0), 0)
-        self.debug.draw_string(spawn_points[50].location, str(spawn_points[50].location),True, carla.Color(255,0,0), 99999999999999990)
-        
-        self.debug.draw_point(spawn_points[100].location, 1, carla.Color(255, 0,0), 0)
-        self.debug.draw_string(spawn_points[100].location, str(spawn_points[100].location),True, carla.Color(255,0,0), 99999999999999990)
 
-        #for i in range(len(spawn_points)): 
-            #self.debug.draw_box(carla.BoundingBox(spawn_points[i].location,carla.Vector3D(1,2,2)),spawn_points[i].rotation, 0.05, carla.Color(255,0,0,0),0)
-        #    self.debug.draw_string(spawn_points[i].location, "Index: " + str(i),True, carla.Color(255,0,0), 99999999999999990)
+        location_1 = carla.Location(100.0, 0.0, 0.0)
+        location_2 = carla.Location(0.0, 100.0, 0.0)
+        location_3 = carla.Location(100.0, 100.0, 0.0)
+        location_4 = carla.Location(0.0, 0.0, 0.0)
+
+        # draw reference points
+        self.debug.draw_point(location_1, 0.1, carla.Color(255, 0,0), 0)
+        self.debug.draw_string(location_1, str(location_1),True, carla.Color(255,0,0), 99999999999999990)
+        
+        self.debug.draw_point(location_2, .1, carla.Color(0, 255,0), 0)
+        self.debug.draw_string(location_2, str(location_2),True, carla.Color(255,0,0), 99999999999999990)
+        
+        self.debug.draw_point(location_3, .1, carla.Color(0,0,255), 0)
+        self.debug.draw_string(location_3, str(location_3),True, carla.Color(255,0,0), 99999999999999990)
+        
+        self.debug.draw_point(location_4, .1, carla.Color(255, 255,0), 0)
+        self.debug.draw_string(location_4, str(location_4),True, carla.Color(255,0,0), 99999999999999990)
+        
+        
         self.car = self.world.spawn_actor(bp_vehicle, transform)
         #self.spectator.set_transform(self.car.get_transform())
         actor_list.append(self.car)
@@ -115,8 +119,8 @@ class MapRetriever:
                 print("user stopped the loop")
                 break
         
-        self.write_results_to_csv()
-        self.create_map_image('carla')
+        #self.write_results_to_csv()
+        #self.create_map_image('carla')
         print("End sensor retrievment")
         #lidar_bp.destroy()
         self.client.apply_batch([carla.command.DestroyActor(x) for x in actor_list])
