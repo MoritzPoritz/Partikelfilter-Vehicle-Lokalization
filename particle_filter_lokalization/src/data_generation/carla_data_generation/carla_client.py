@@ -13,6 +13,7 @@ except IndexError:
 import carla
 import get_map_point_cloud as gmpc
 import get_map as gm
+import get_simulation_data as gsd
 # scripts that can be executed
 
 def main():
@@ -79,7 +80,10 @@ def main():
         elif(args.script_name == "get_map"): 
             map_retriever = gm.MapRetriever(client, args)
             map_retriever.map_retrievement()
-            
+        
+        elif(args.script_name == "get_simulation_data"): 
+            data_retriever = gsd.DataRetierver(client, args)
+            data_retriever.data_retrievement()
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')    

@@ -13,7 +13,8 @@ def save_array_as_image(img, path):
 
 def image_to_array(path): 
     
-
+    print(path)
     image =  cv.imread(path+".png",)
+
     gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     return gray_image

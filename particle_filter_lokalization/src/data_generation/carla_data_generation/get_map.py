@@ -82,10 +82,10 @@ class MapRetriever:
         transform = self.world.get_map().get_spawn_points()[spawn_point_index]
         spawn_points = self.world.get_map().get_spawn_points()
 
-        location_1 = carla.Location(100.0, 0.0, 0.0)
-        location_2 = carla.Location(0.0, 100.0, 0.0)
-        location_3 = carla.Location(100.0, 100.0, 0.0)
-        location_4 = carla.Location(0.0, 0.0, 0.0)
+        location_1 = carla.Location(100.0, 0.0, 0.0) # red
+        location_2 = carla.Location(0.0, 100.0, 0.0) # green
+        location_3 = carla.Location(100.0, 100.0, 0.0) # blue
+        location_4 = carla.Location(0.0, 0.0, 0.0) #yellow
 
         # draw reference points
         self.debug.draw_point(location_1, 0.1, carla.Color(255, 0,0), 0)

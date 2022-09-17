@@ -3,6 +3,8 @@ curve_line_name = "curve"
 s_curve_name_constant_velocity = "s_curve_constant_velocity"
 s_curve_name_variable_velocity = "s_curve_variable_velocity"
 
+overall_data_file = "overall"
+
 data_suffix = '__data'
 image_and_image_data_prefix = 'map_image__'
 image_suffix = '__image'
@@ -13,6 +15,10 @@ point_cloud_measured_appendix = '__pcm'
 imu_data_appendix = '__imu'
 lidar_data_appendix = '__lidar'
 map_data_appendix = '__map_data'
+
+carla_map_name ="carla_map_scaled"
+carla_distance_map_name ="carla_distance_map_scaled"
+
 # data generation specifics
 map_border = 100
 N = 1000
@@ -32,7 +38,7 @@ a_range = [0, 10]
 
 initial_pos_radius = 30
 
-lidar_range = 10
+lidar_range = 50
 
 # processmodel specifics
 L = 2.743
@@ -42,13 +48,21 @@ dt = 0.05
 vehicle = 'mustang'
 max_steering_angle = 70
 
-
+# for my private pc
+'''
 paths = {
     'data_path' : "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\",
     'filter_results_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\filter_results\\",
     'map_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\map\\",
-    'pc_measurements_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\pc_measurements\\",
     'evaluation_results_path': "C:\\Users\\Modulo\\Documents\\Uni\\Projekt 2\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\evaluation_results\\"
+}
+'''
+# for my work pc
+paths = {
+    'data_path' : "C:\\Users\\mso\\Documents\\Uni\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\",
+    'filter_results_path': "C:\\Users\\mso\\Documents\\Uni\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\filter_results\\",
+    'map_path': "C:\\Users\\mso\\Documents\\Uni\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\map\\",
+    'evaluation_results_path': "C:\\Users\\mso\\Documents\\Uni\\Partikelfilter-Vehicle-Lokalization\\particle_filter_lokalization\\data\\evaluation_results\\"
 }
 
 

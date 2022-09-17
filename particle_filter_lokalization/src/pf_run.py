@@ -34,6 +34,8 @@ def main():
                         pf.run_pf_imu()
                         pf.evaluate()
                         pf.save_result()
+                        animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db)
+
         else:
             if (args.road_type == config.straight_x_line_name): 
                 pf = pf_imu.ParticleFilterIMU(config.N, config.straight_x_line_name)
@@ -45,10 +47,9 @@ def main():
                 pf = pf_imu.ParticleFilterIMU(config.N, config.s_curve_name_variable_velocity)        
                 
 
-            pf.run_pf_imu()
-            pf.evaluate()
-            pf.save_result()
-            animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db)
+        pf.run_pf_imu()
+        pf.evaluate()
+        pf.save_result()
     elif (args.filter_type == "lidar"):
         if(args.road_type == 'all'): 
             

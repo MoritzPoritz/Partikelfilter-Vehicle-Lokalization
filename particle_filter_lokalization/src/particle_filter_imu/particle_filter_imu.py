@@ -20,18 +20,8 @@ class ParticleFilterIMU:
         self.process_model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         # data related stuff
         self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.imu_data_appendix+config.data_suffix)
-        self.dm = map_handler.DistanceMap(dataset_name)
-        self.Ts=self.simulation_data['timestamps'].values
-        
-        # create ranges
-        x_min = self.dm.image_data['x_min']
-        x_max = self.dm.image_data['x_max']
-        
-        y_min = self.dm.image_data['y_min']
-        y_max = self.dm.image_data['y_max']
-        
-        self.x_range = [x_min, x_max]
-        self.y_range = [y_min, y_max]
+        self.dm = map_handler.DistanceMap()
+        self.Ts=self.simulation_data['timestamps'].values     
     
         self.v_range = [0, 10]
         self.a_range = [0, 10]
@@ -67,20 +57,7 @@ class ParticleFilterIMU:
         for i in range(self.N): 
             self.particles[i] = self.process_model.F(x=self.particles[i], u=u)
         
-    '''
-    creates uniformly distributed particles
-    '''
-    def create_uniform_particles(self):
-        particles = np.empty((self.N, 6))
-        particles[:, 0] = np.random.uniform(self.x_range[0], self.x_range[1], size=self.N)
-        particles[:, 1] = np.random.uniform(self.y_range[0], self.y_range[1], size=self.N)
-        particles[:, 2] = np.random.uniform(self.v_range[0], self.v_range[1], size=self.N)
-        particles[:, 3] = np.random.uniform(self.a_range[0], self.a_range[1], size=self.N)
-        particles[:, 4] = np.random.uniform(self.theta_range[0], self.theta_range[1], size=self.N)
-        particles[:, 5] = np.random.uniform(self.delta_range[0], self.delta_range[1], size=self.N)
-        particles[:, 4] %= 2 * np.pi
-        particles[:, 5] %= 2 * np.pi
-        return particles
+    
     def create_gaussian_particles(self,mean, std):
         particles = np.empty((self.N, 6))
         particles[:, 0] = mean[0] + (np.random.rand(self.N) * std[0])

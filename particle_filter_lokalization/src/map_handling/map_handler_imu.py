@@ -3,17 +3,23 @@ import utils.json_handler as json_handler
 import utils.image_handler as image_handler
 import numpy as np
 class DistanceMap: 
-    def __init__(self, map_name): 
-        self.map_name = map_name
-        self.image_data = json_handler.json_to_dict(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.image_data_suffix)
-        self.distance_map = np.array(image_handler.image_to_array(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.distance_map_suffix))
+    def __init__(self): 
+        self.map = np.array(image_handler.image_to_array(config.paths['map_path']+config.carla_map_name))
+        self.distance_map = np.array(image_handler.image_to_array(config.paths['map_path']+config.carla_distance_map_name))
+        self.prepare_distance_map()
         self.scale = 0.63
-
         self.translate_x = 149
         self.translate_y = 61
 
+    def prepare_distance_map(self): 
+        self.distance_map = self.distance_map/255
+        to_one = 1/self.distance_map.max()
+        self.distance_map = self.distance_map * to_one
+
+
     def world_coordinates_to_image(self,world_point):
-        return world_point*self.scale + np.array([self.translate_x, self.translate_y])   
+        
+        return (world_point*self.scale + np.array([self.translate_x, self.translate_y])).astype(int)   
     
     #def world_coordinates_to_image(self, coordinates):
     #    x_image = int(coordinates[0] * self.image_data['decimal_multiplier'] - self.image_data['x_min'])
