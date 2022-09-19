@@ -7,9 +7,9 @@ class DistanceMap:
         self.map = np.array(image_handler.image_to_array(config.paths['map_path']+config.carla_map_name))
         self.distance_map = np.array(image_handler.image_to_array(config.paths['map_path']+config.carla_distance_map_name))
         self.prepare_distance_map()
-        self.scale = 0.63
-        self.translate_x = 149
-        self.translate_y = 61
+        self.scale = np.array([config.world_to_img_scaling_x, config.world_to_img_scaling_y])
+        self.translate_x = config.world_to_img_translate_x
+        self.translate_y = config.world_to_img_translate_y
 
     def prepare_distance_map(self): 
         self.distance_map = self.distance_map/255

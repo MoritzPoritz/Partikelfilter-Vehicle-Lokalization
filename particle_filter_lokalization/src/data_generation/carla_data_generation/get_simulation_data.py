@@ -36,6 +36,12 @@ class DataRetierver:
         self.client = client
         self.args = args
         self.world = self.client.get_world()
+        self.set_settings()
+
+        self.traffic_manager = self.client.get_trafficmanager()
+        self.tm_port = self.traffic_manager.get_port()
+        self.traffic_manager.set_synchronous_mode(True)
+
         self.car = None
         self.spectator = self.world.get_spectator()
         self.debug = self.world.debug
@@ -71,7 +77,6 @@ class DataRetierver:
         # carla stuff
         self.actor_list = []
         self.spawn_point_index = 10
-        self.traffic_manager = None
         self.blueprint_library = self.world.get_blueprint_library()
 
     def tick(self): 
@@ -79,14 +84,15 @@ class DataRetierver:
 
     def set_settings(self): 
         print("Set settings")
-        settings = self.world.get_settings()
-        if not settings.synchronous_mode:
-            settings.synchronous_mode = True
+        self.settings = self.world.get_settings()
+        if not self.settings.synchronous_mode:
+            self.settings.synchronous_mode = True
+        print("Synchronous mode on: ", self.settings.synchronous_mode)
         # fixed_delta_seconds need  <= max_substep_delta_time * max_substeps
-        settings.fixed_delta_seconds = .05
-        settings.max_substep_delta_time = 0.01
-        settings.max_substeps = 10
-        self.world.apply_settings(settings)
+        self.settings.fixed_delta_seconds = .05
+        self.settings.max_substep_delta_time = 0.01
+        self.settings.max_substeps = 10
+        self.world.apply_settings(self.settings)
 
 
 
@@ -118,11 +124,13 @@ class DataRetierver:
         else: 
             self.lidar_measurements.append(0)
 
+        
+
         self.timestamps_lidar.append(point_cloud.timestamp)
         self.positions_x_ground_truth_lidar.append(self.car.get_transform().location.x)
         self.positions_y_ground_truth_lidar.append(self.car.get_transform().location.y)
         self.acceleration_input_lidar.append(self.car.get_acceleration().x)
-        self.steering_input_lidar.append(self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FL_Wheel))
+        self.steering_input_lidar.append(-self.car.get_control().steer * config.max_steering_angle)
         self.velocities_ground_truth_lidar.append(np.linalg.norm(np.array([self.car.get_acceleration().x, self.car.get_acceleration().y])))
 
 
@@ -137,21 +145,23 @@ class DataRetierver:
         self.imu_sensor.listen(lambda imu: self.imu_callback(imu))
     
     def imu_callback(self,imu):
-        self.acceleration_measurement.append(np.array(imu.accelerometer.x))
-        
+        unnoisy_forward_acceleration = imu.accelerometer.x
+        self.acceleration_measurement.append(unnoisy_forward_acceleration)       
         # turn orientation from carla (compass with 0° at -y axis to filter with 0° at x axis)
         carla_orientation = imu.compass
-        rotated_orientation = (carla_orientation- np.pi/2)%(2*np.pi)
-        vec_from_orientation = np.array([np.cos(rotated_orientation), np.sin(rotated_orientation)])
-        new_orientation = np.arctan2(vec_from_orientation[1], vec_from_orientation[0])% (np.pi*2)
-        self.orientation_measurement.append(new_orientation)
-
-
+        mirrored_orientation = 2*np.pi - carla_orientation
+        rotated_orientation = (mirrored_orientation + (np.pi/2)) % (2*np.pi)
+        self.orientation_measurement.append(rotated_orientation)
+        #self.orientation_measurement.append(carla_orientation)
+        #print(self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FL_Wheel), self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FR_Wheel))
+        print(-self.car.get_control().steer * config.max_steering_angle, -self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FL_Wheel), -self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FR_Wheel))
         self.timestamps_imu.append(imu.timestamp)
         self.positions_x_ground_truth_imu.append(self.car.get_transform().location.x)
-        self.positions_y_ground_truth_imu.append(self.car.get_transform().location.y)
-        self.acceleration_input_imu.append(self.car.get_acceleration().x)
-        self.steering_input_imu.append(self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FL_Wheel))
+        self.positions_y_ground_truth_imu.append(-self.car.get_transform().location.y) # need to be inverted to match coordinate frame of filter
+        self.acceleration_input_imu.append(unnoisy_forward_acceleration)
+        #self.acceleration_input_imu.append(unnoisy_forward_acceleration)
+        #self.steering_input_imu.append(self.car.get_wheel_steer_angle(carla.VehicleWheelLocation.FL_Wheel))
+        self.steering_input_imu.append(-self.car.get_control().steer * config.max_steering_angle)
         self.velocities_ground_truth_imu.append(np.linalg.norm(np.array([self.car.get_acceleration().x, self.car.get_acceleration().y])))
 
         
@@ -161,16 +171,21 @@ class DataRetierver:
         bp_vehicle = blueprint_library.filter('mustang')[0]
         transform = self.world.get_map().get_spawn_points()[self.spawn_point_index]    
         self.car = self.world.spawn_actor(bp_vehicle, transform)
-        self.spectator.set_transform(self.car.get_transform())
+        #self.spectator.set_transform(self.car.get_transform())
         self.actor_list.append(self.car)
-        print('created %s' % self.car.type_id)
+        print('created %s' % self.car.type_id) 
+        self.car.set_autopilot(True, self.tm_port)
+        print("Sat Trafficmanager to synchronous")
         
-        self.traffic_manager = self.client.get_trafficmanager()
-        tm_port = self.traffic_manager.get_port()
-        self.traffic_manager.set_synchronous_mode(True)
-        self.car.set_autopilot(True, tm_port)
-        
+    def destroy(self):
+        if self.imu_sensor is not None: 
+            self.imu_sensor.destroy()
+        if self.lidar_sensor is not None:
+            self.lidar_sensor.destroy()
+        if self.car is not None:
+            self.car.destroy()
 
+      
     def data_retrievement(self): 
         print("Started data retrievement")
         self.spawn_vehicle()
@@ -185,22 +200,18 @@ class DataRetierver:
         
         print("End sensor retrievment")
 
-        print("Write imu data")
+        self.destroy()
         self.write_imu_data_to_csv()
         self.write_lidar_data_to_csv()
-        self.client.apply_batch([carla.command.DestroyActor(x) for x in self.actor_list])
-
-
+        #self.client.apply_batch([carla.command.DestroyActor(x) for x in self.actor_list])
+                
+        
+        self.traffic_manager.set_synchronous_mode(False)
+        self.settings.synchronous_mode = False
         print('done.')
 
     def write_lidar_data_to_csv(self): 
-        self.lidar_measurements = np.array(self.lidar_measurements)
-        self.acceleration_input_lidar = np.array(self.acceleration_input_lidar)
-        self.steering_input_lidar = np.array(self.steering_input_lidar)
-        self.positions_x_ground_truth_lidar = np.array(self.positions_x_ground_truth_lidar)
-        self.positions_y_ground_truth_lidar = np.array(self.positions_y_ground_truth_lidar)
-        self.velocities_ground_truth_lidar = np.array(self.velocities_ground_truth_lidar)
-        self.timestamps_lidar = np.array(self.timestamps_lidar)    
+        print("Write lidar data")
         data = {
             'acceleration_input': self.acceleration_input_lidar,
             'steering_input': self.steering_input_lidar, 
@@ -211,18 +222,11 @@ class DataRetierver:
             'timestamps': self.timestamps_lidar
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+ config.overall_data_file + config.lidar_data_appendix + config.data_suffix, data)
-
+        print("Wrote LIDAR data to: ", config.paths['data_path']+ config.overall_data_file + config.lidar_data_appendix + config.data_suffix)
 
     def write_imu_data_to_csv(self): 
-        self.acceleration_measurement = np.array(self.acceleration_measurement)
-        self.orientation_measurement = np.array(self.orientation_measurement)
-        self.acceleration_input_imu = np.array(self.acceleration_input_imu)
-        self.steering_input_imu = np.array(self.steering_input_imu)
-        self.positions_x_ground_truth_imu = np.array(self.positions_x_ground_truth_imu)
-        self.positions_y_ground_truth_imu = np.array(self.positions_y_ground_truth_imu)
-        self.velocities_ground_truth_imu = np.array(self.velocities_ground_truth_imu)
-        self.timestamps_imu = np.array(self.timestamps_imu)
-
+        print("Write imu data")
+        
         data = {
             'acceleration_input': self.acceleration_input_imu,
             'steering_input': self.steering_input_imu, 
@@ -234,3 +238,4 @@ class DataRetierver:
             'timestamps': self.timestamps_imu
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+ config.overall_data_file + config.imu_data_appendix + config.data_suffix, data)
+        print("Wrote IMU data to: ", config.paths['data_path']+ config.overall_data_file + config.imu_data_appendix + config.data_suffix)

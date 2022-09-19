@@ -16,9 +16,13 @@ imu_data_appendix = '__imu'
 lidar_data_appendix = '__lidar'
 map_data_appendix = '__map_data'
 
-carla_map_name ="carla_map_scaled"
-carla_distance_map_name ="carla_distance_map_scaled"
-
+# carla map related
+carla_map_name ="carla_map_unscaled"
+carla_distance_map_name ="carla_distance_map_unscaled"
+world_to_img_scaling_x = 4.06
+world_to_img_scaling_y = -4.06
+world_to_img_translate_x = 963
+world_to_img_translate_y = 373 
 # data generation specifics
 map_border = 100
 N = 1000
