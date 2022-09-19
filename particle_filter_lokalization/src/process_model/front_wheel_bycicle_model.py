@@ -26,10 +26,10 @@ class FrontWheelBycicleModel:
         theta_next = x[4] + (((x[2]*np.sin(x[5]))/self.vehicle_length) * self.dt)
         # calculate new delta from control input
         delta_next = u[1] + (np.random.randn() * self.control_input_std[1])
-        print(delta_next)
 
         return np.array([x_next, y_next,v_next, a_next, theta_next, delta_next], dtype=object)
     
+
     def get_current_state(self): 
         return np.array(self.current_state)
 

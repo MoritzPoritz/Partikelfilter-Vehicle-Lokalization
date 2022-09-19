@@ -46,7 +46,7 @@ lidar_range = 50
 
 # processmodel specifics
 L = 2.743
-dt = 0.05
+dt = 0.01
 
 # vehicle specifics
 vehicle = 'mustang'
