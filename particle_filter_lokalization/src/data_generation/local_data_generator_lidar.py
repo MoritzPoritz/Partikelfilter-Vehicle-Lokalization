@@ -12,7 +12,6 @@ import utils.json_handler as json_handler
 import utils.image_handler as image_handler
 import cv2 as cv
 import matplotlib.pyplot as plt
-import open3d as o3d
 from scipy import stats
 
 

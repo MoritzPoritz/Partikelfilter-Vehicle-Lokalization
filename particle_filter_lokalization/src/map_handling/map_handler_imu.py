@@ -12,12 +12,10 @@ class DistanceMap:
         self.translate_x = 149
         self.translate_y = 61
 
-    def world_coordinates_to_image(self,world_point):
-        return world_point*self.scale + np.array([self.translate_x, self.translate_y])   
     
-    #def world_coordinates_to_image(self, coordinates):
-    #    x_image = int(coordinates[0] * self.image_data['decimal_multiplier'] - self.image_data['x_min'])
-    #    y_image = int(coordinates[1] * self.image_data['decimal_multiplier'] - self.image_data['y_min'])
+    def world_coordinates_to_image(self, coordinates):
+        x_image = int(coordinates[0] * self.image_data['decimal_multiplier'] - self.image_data['x_min'])
+        y_image = int(coordinates[1] * self.image_data['decimal_multiplier'] - self.image_data['y_min'])
 
         return np.array([x_image, y_image])
 

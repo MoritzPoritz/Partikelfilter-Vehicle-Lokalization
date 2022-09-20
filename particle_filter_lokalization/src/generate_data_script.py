@@ -1,6 +1,7 @@
 from pdb import main
 import data_generation.local_data_generator_imu as ldg_imu
 import data_generation.local_data_generator_lidar as ldg_lidar
+import data_generation.local_data_generation_both as ldg
 import argparse
 import config.config as config
 def main(): 
@@ -27,9 +28,11 @@ def main():
     elif(args.filter_type == "lidar"): 
         data_generator = ldg_lidar.LocalDataGeneratorLIDAR()
         data_generator.generate_data(args.road_type)
-    #data_generator.drive_straight_in_x_direction()
-    #data_generator.drive_a_long_curve()
-    #data_generator.drive_s_curve_with_constant_velocity()
+
+    elif(args.filter_type== "all"): 
+        data_generator = ldg.LocalDataGenerator()
+        data_generator.generate_data(args.road_type)
+  
 
 
 if __name__ == "__main__": 
