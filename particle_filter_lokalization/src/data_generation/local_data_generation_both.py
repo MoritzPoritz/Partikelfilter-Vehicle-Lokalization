@@ -54,24 +54,38 @@ class LocalDataGenerator:
 
         # values for rain and fog
         self.rain_rate = 0
-        self.fog_rate = 0
+        #self.fog_rate = 0
         self.p_min = 0.9/(np.pi * config.lidar_range**2)
+
+        self.initial_velocity = 0
+        self.initial_acceleration = 0
+        self.initial_theta = 0
+        self.initial_delta = 0
+
+        self.sample_id = 0
         
         self.xs = []
     def generate_data(self, data_type): 
-        if (data_type == config.straight_x_line_name): 
-            self.drive_straight_in_x_direction()
+        if (data_type == config.straight_x_constant_velocity_line_name): 
+            self.drive_straight_constant_velocity_in_x_direction()
+
+        elif(data_type == config.straight_x_variable_velocity_line_name): 
+            self.drive_straight_variable_velocity_in_x_direction()
+
         elif(data_type == config.curve_line_name): 
             self.drive_a_long_curve()
+
         elif(data_type == config.s_curve_name_constant_velocity): 
             self.drive_s_curve_with_constant_velocity()
+
         elif(data_type == config.s_curve_name_variable_velocity): 
             self.drive_s_curve_with_variable_velocity()
+        
         elif(data_type == "all"): 
             self.generate_all_data()
 
     def generate_all_data(self): 
-        self.drive_straight_in_x_direction()
+        self.drive_straight_constant_velocity_in_x_direction()
         self.drive_a_long_curve()
         self.drive_s_curve_with_constant_velocity()
         self.drive_s_curve_with_variable_velocity()
@@ -97,7 +111,7 @@ class LocalDataGenerator:
 
 
     def create_lidar_measurement(self): 
-        pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
+        pc = np.stack([self.pc_env_x, self.pc_env_y, self.reflectivities], axis=1)        
         positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
         # create measurements
         for p in positions:
@@ -113,8 +127,7 @@ class LocalDataGenerator:
     def drive_a_long_curve(self): 
         self.reset_lists()
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
-        self.xs.append(model.get_initial_state(x=1, y=1, v=5, a=0, theta=0, delta=0))
-
+        self.xs.append(model.get_initial_state(x=1, y=1, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         u = np.array([0,0], dtype=float)
         
         for i in range(1,1000): 
@@ -125,8 +138,6 @@ class LocalDataGenerator:
                 u[0] = 0
             self.xs.append(model.F(x=self.xs[i-1],u=u)) 
             self.add_to_data(self.xs[i-1], u, i)
-           
-        
         self.create_lidar_measurement()
         # save the results
         self.save_point_cloud(config.curve_line_name)
@@ -134,7 +145,7 @@ class LocalDataGenerator:
         self.write_imu_result_to_csv(config.curve_line_name)
 
     def create_points_from_pos(self, pos, theta, i): 
-        forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
+        #forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
         point_1 = (np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
         point_2 = (np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
         reflectivity_1 = np.random.random()
@@ -143,11 +154,11 @@ class LocalDataGenerator:
         point_2 = np.append(point_2, reflectivity_2)
         return np.array([point_1, point_2])
 
-    def drive_straight_in_x_direction(self):
+    def drive_straight_constant_velocity_in_x_direction(self):
         self.reset_lists()
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0])
-        self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
+        self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         for i in range(1,1000): 
             self.xs.append(model.F(x=self.xs[i-1],u=u)) 
             self.add_to_data(self.xs[i-1], u, i)
@@ -155,16 +166,43 @@ class LocalDataGenerator:
         
         self.create_lidar_measurement()
         # save the results
-        self.save_point_cloud(config.straight_x_line_name)
-        self.write_lidar_result_to_csv(config.straight_x_line_name)
-        self.write_imu_result_to_csv(config.straight_x_line_name)   
-            
+        self.save_point_cloud(config.straight_x_constant_velocity_line_name)
+        self.write_lidar_result_to_csv(config.straight_x_constant_velocity_line_name)
+        self.write_imu_result_to_csv(config.straight_x_constant_velocity_line_name)   
+
+    def drive_straight_variable_velocity_in_x_direction(self):
+        self.reset_lists()
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
+        u = np.array([0,0])
+        self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
+        for i in range(1,1000): 
+            # set acceleration
+            if (i < 150 and u[0] < 15): 
+                u[0] += 0.01
+            elif (i > 150 and i < 250 and u[0] > 2): 
+                u[0] -= 0.01
+            elif (i > 250 and i < 300 and u[0] > -1): 
+                if (self.xs[i-1][2] >= 0):
+                    u[0] -= 0.1
+            elif (i > 300 and i < 600 and u[0] < 20): 
+                u[0] += 0.001
+            elif(i > 600 and i < 1200): 
+                u[0] = 0
+            self.xs.append(model.F(x=self.xs[i-1],u=u)) 
+            self.add_to_data(self.xs[i-1], u, i)
+           
+        
+        self.create_lidar_measurement()
+        # save the results
+        self.save_point_cloud(config.straight_x_variable_velocity_line_name)
+        self.write_lidar_result_to_csv(config.straight_x_variable_velocity_line_name)
+        self.write_imu_result_to_csv(config.straight_x_variable_velocity_line_name)             
 
     def drive_s_curve_with_constant_velocity(self): 
         self.reset_lists()
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
-        self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
+        self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         
         for i in range(1,2000):
             # set steering
@@ -194,7 +232,7 @@ class LocalDataGenerator:
         self.reset_lists()
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0], dtype=float)
-        self.xs.append(model.get_initial_state(x=0, y=0, v=5, a=0, theta=0, delta=0))
+        self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         
         for i in range(1,2000):
             # set steering
@@ -237,6 +275,7 @@ class LocalDataGenerator:
 
 
     def save_point_cloud(self, type): 
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
         data = {
             'pc_x': self.pc_env_x,
             'pc_y': self.pc_env_y, 
@@ -245,6 +284,8 @@ class LocalDataGenerator:
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type+config.point_cloud_appendix, data)
 
     def write_lidar_result_to_csv(self, type): 
+        print(self.sample_id)
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
         type = type+config.lidar_data_appendix
         basic_data = {
             'acceleration_input': self.car_ci_accelerations,
@@ -259,6 +300,7 @@ class LocalDataGenerator:
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
 
     def write_imu_result_to_csv(self, type): 
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
         type = type+config.imu_data_appendix
         data = {
             'acceleration_input': self.car_ci_accelerations,

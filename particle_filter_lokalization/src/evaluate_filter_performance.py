@@ -14,7 +14,7 @@ def main():
         '--raodtype','-rt',
         metavar='R',
         dest='road_type',
-        default=config.straight_x_line_name,
+        default=config.straight_x_constant_velocity_line_name,
         help='road type u wish to generate data for')
     args = argparser.parse_args()
 

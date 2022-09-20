@@ -38,7 +38,7 @@ class LocalDataGeneratorLIDAR:
         self.measurement_distances_mode = []
 
     def generate_data(self, data_type): 
-        if (data_type == config.straight_x_line_name): 
+        if (data_type == config.straight_x_constant_velocity_line_name): 
             self.drive_straight_in_x_direction()
         
         elif(data_type == config.curve_line_name): 
@@ -232,8 +232,8 @@ class LocalDataGeneratorLIDAR:
             self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
                 
             
-        self.write_result_to_csv(config.straight_x_line_name)
-        self.save_point_cloud(config.straight_x_line_name)
+        self.write_result_to_csv(config.straight_x_constant_velocity_line_name)
+        self.save_point_cloud(config.straight_x_constant_velocity_line_name)
 
     
     def create_points_from_pos(self, pos, theta): 

@@ -11,13 +11,13 @@ def main():
         '--raodtype','-rt',
         metavar='R',
         dest='road_type',
-        default=config.straight_x_line_name,
+        default=config.straight_x_constant_velocity_line_name,
         help='road type u wish to generate data for')
     argparser.add_argument(
         '--filtertype','-ft',
         metavar='F',
         dest='filter_type',
-        default=config.straight_x_line_name,
+        default=config.straight_x_constant_velocity_line_name,
         help='filter u want to generate data for')
      
     args = argparser.parse_args()
@@ -35,8 +35,8 @@ def main():
                         pf.evaluate()
                         pf.save_result()
         else:
-            if (args.road_type == config.straight_x_line_name): 
-                pf = pf_imu.ParticleFilterIMU(config.N, config.straight_x_line_name)
+            if (args.road_type == config.straight_x_constant_velocity_line_name): 
+                pf = pf_imu.ParticleFilterIMU(config.N, config.straight_x_constant_velocity_line_name)
             elif(args.road_type == config.curve_line_name): 
                 pf = pf_imu.ParticleFilterIMU(config.N, config.curve_line_name)        
             elif(args.road_type == config.s_curve_name_constant_velocity): 
@@ -62,8 +62,8 @@ def main():
                         pf.evaluate()
                         pf.save_result()
         else:
-            if (args.road_type == config.straight_x_line_name): 
-                pf = pf_lidar.ParticleFilterLIDAR(config.N, config.straight_x_line_name)
+            if (args.road_type == config.straight_x_constant_velocity_line_name): 
+                pf = pf_lidar.ParticleFilterLIDAR(config.N, config.straight_x_constant_velocity_line_name)
             elif(args.road_type == config.curve_line_name): 
                 pf = pf_lidar.ParticleFilterLIDAR(config.N, config.curve_line_name)        
             elif(args.road_type == config.s_curve_name_constant_velocity): 

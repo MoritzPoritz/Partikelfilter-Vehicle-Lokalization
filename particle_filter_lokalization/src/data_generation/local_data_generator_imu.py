@@ -38,7 +38,7 @@ class LocalDataGeneratorIMU:
         self.xs = []
 
     def generate_data(self, data_type): 
-        if (data_type == config.straight_x_line_name): 
+        if (data_type == config.straight_x_constant_velocity_line_name): 
             self.drive_straight_in_x_direction()
         elif(data_type == config.curve_line_name): 
             self.drive_a_long_curve()
@@ -97,7 +97,7 @@ class LocalDataGeneratorIMU:
             self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
             self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())   
             
-        self.write_result_to_csv(config.straight_x_line_name)
+        self.write_result_to_csv(config.straight_x_constant_velocity_line_name)
 
     def drive_s_curve_with_constant_velocity(self): 
         self.reset_lists()
