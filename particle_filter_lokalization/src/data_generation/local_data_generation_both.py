@@ -12,6 +12,8 @@ import utils.image_handler as image_handler
 import cv2 as cv
 import matplotlib.pyplot as plt
 
+import rain_simulation.rain_simulation as rs
+
 from scipy import stats
 
 class LocalDataGenerator: 
@@ -33,12 +35,14 @@ class LocalDataGenerator:
         # point cloud environment
         self.pc_env_x = []
         self.pc_env_y = []
+        self.reflectivities = []
         # point cloud measurement
         self.pc_creation_noise = 0.3
         self.pc_measure_noise = 0
         self.lidar_distance = config.lidar_range
         self.object_distance = 20
         self.measurement_distances_mode = []
+        self.measurement_intensities_mode = []
         # distance transform
         self.map_shape = (0,0)
         self.map = []
@@ -47,6 +51,11 @@ class LocalDataGenerator:
         self.y_range = np.array([0,0])
         self.accounted_decimal_places = 0
         self.position_vectors_in_image_coordinates = []
+
+        # values for rain and fog
+        self.rain_rate = 0
+        self.fog_rate = 0
+        self.p_min = 0.9/(np.pi * config.lidar_range**2)
         
         self.xs = []
     def generate_data(self, data_type): 
@@ -81,18 +90,25 @@ class LocalDataGenerator:
         # save lidar measurements
         points = self.create_points_from_pos(np.array([x[0], x[1]]), x[4],i)
         for p in points:
-            self.pc_env_x.append(p[0] + np.random.randn() * self.pc_creation_noise)
-            self.pc_env_y.append(p[1] + np.random.randn() * self.pc_creation_noise)
+            self.pc_env_x.append(p[0])
+            self.pc_env_y.append(p[1])
+            self.reflectivities.append(p[2])
 
-    def create_lidar_measurement(self, ): 
+
+
+    def create_lidar_measurement(self): 
         pc = np.stack([self.pc_env_x, self.pc_env_y], axis=1)        
         positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
         # create measurements
         for p in positions:
-            subs = (p - pc) #+ np.random.randn(p.shape)*self.pc_measure_noise
-            dists = np.linalg.norm(subs, axis=1)
-            in_range = dists[dists < config.lidar_range]
-            self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
+            #position, rain_rate, pc_array, p_min, lidar_range
+            ranges, intensities = rs.apply_rain(p,self.rain_rate, pc, self.p_min, config.lidar_range)
+            self.measurement_distances_mode.append(stats.mode(ranges)[0][0])
+            self.measurement_intensities_mode.append(stats.mode(intensities)[0][0])
+            #subs = (p - pc) #+ np.random.randn(p.shape)*self.pc_measure_noise
+            #dists = np.linalg.norm(subs, axis=1)
+            #in_range = dists[dists < config.lidar_range]
+            #self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
 
     def drive_a_long_curve(self): 
         self.reset_lists()
@@ -119,9 +135,13 @@ class LocalDataGenerator:
 
     def create_points_from_pos(self, pos, theta, i): 
         forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
-        perpendicular_vec1 = (np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
-        perpendicular_vec2 = (np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
-        return np.array([perpendicular_vec1, perpendicular_vec2])
+        point_1 = (np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
+        point_2 = (np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
+        reflectivity_1 = np.random.random()
+        reflectivity_2 = np.random.random()
+        point_1 = np.append(point_1, reflectivity_1)
+        point_2 = np.append(point_2, reflectivity_2)
+        return np.array([point_1, point_2])
 
     def drive_straight_in_x_direction(self):
         self.reset_lists()
@@ -219,7 +239,8 @@ class LocalDataGenerator:
     def save_point_cloud(self, type): 
         data = {
             'pc_x': self.pc_env_x,
-            'pc_y': self.pc_env_y
+            'pc_y': self.pc_env_y, 
+            'reflect' : self.reflectivities
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type+config.point_cloud_appendix, data)
 
@@ -231,7 +252,8 @@ class LocalDataGenerator:
             'positions_x_ground_truth': self.car_gt_positions_x,
             'positions_y_ground_truth': self.car_gt_positions_y,
             'velocities_ground_truth': self.car_gt_velocities,
-            'measurements': self.measurement_distances_mode, 
+            'measurements_distances': self.measurement_distances_mode,
+            'measurements_intensities': self.measurement_intensities_mode, 
             'timestamps': self.car_gt_timestamps
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
@@ -322,8 +344,11 @@ class LocalDataGenerator:
         # point cloud environment
         self.pc_env_x = []
         self.pc_env_y = []
+        self.reflectivities = []
         # point cloud measurement
         self.measurement_distances_mode = []
+        self.measurement_intensities_mode = []
+
         # distance transform
         self.map_shape = (0,0)
         self.map = []
