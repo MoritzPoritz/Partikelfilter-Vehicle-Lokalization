@@ -19,12 +19,36 @@ def main():
         dest='filter_type',
         default=config.straight_x_constant_velocity_line_name,
         help='filter u want to generate data for')
-     
+    argparser.add_argument(
+        '--specific_dataset','-sd',
+        metavar='F',
+        dest='specific_dataset',
+        default="sample_id_0__straight_in_x_constant_velocity__rain_rate_0",
+        help='data u want to the filter to run on')
+    
     args = argparser.parse_args()
 
+   
+
     if (args.filter_type == "imu"):
-        if(args.road_type == 'all'): 
-            
+        if (args.road_type == "specific"):
+            pf = pf_imu.ParticleFilterIMU(config.N, args.specific_dataset)
+            pf.run_pf_imu()
+            pf.evaluate()
+            pf.save_result()
+            animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth, pf.dm, pf.Ts, pf.mse, pf.mse_db)
+    elif (args.filter_type == "lidar"):
+        print("Run LIDAR-FIlter")
+        if (args.road_type == "specific"):
+
+            pf = pf_lidar.ParticleFilterLIDAR(config.N,  args.specific_dataset)
+            pf.run_pf_lidar()
+            pf.evaluate()
+            pf.save_result()
+            animated.plot_results_animated_lidar(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db, pf.point_cloud)
+
+    '''
+        if(args.road_type == 'all'):   
             all_data = os.listdir(config.paths["data_path"])
             for file in all_data: 
                 if (file.endswith(".csv")): 
@@ -76,7 +100,11 @@ def main():
             pf.evaluate()
             pf.save_result()
             animated.plot_results_animated_lidar(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth, pf.Ts, pf.mse, pf.mse_db, pf.point_cloud)
+    else: 
 
+        sample_id_0__straight_in_x_constant_velocity__rain_rate_0__imu__data
+        sample_id_0__straight_in_x_variable_velocity__rain_rate_0__imu__data
+    '''
 
 if __name__ == "__main__": 
     main()

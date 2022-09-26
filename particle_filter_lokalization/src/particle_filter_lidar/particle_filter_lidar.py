@@ -9,6 +9,8 @@ import utils.csv_handler as csv_handler
 from scipy.spatial.distance import directed_hausdorff
 import math
 from scipy import stats
+import map_handling.map_handler_imu as map_handler
+
 
 
 class ParticleFilterLIDAR: 
@@ -21,7 +23,7 @@ class ParticleFilterLIDAR:
         # data related stuff
         self.simulation_data = load_specific_data.load_simulation_data(dataset_name+config.lidar_data_appendix+config.data_suffix)
         #self.lidar_measurements = load_specific_data.load_lidar_measurements(dataset_name+config.lidar_data_appendix+config.point_cloud_measured_appendix)
-
+        self.dm = map_handler.DistanceMap(dataset_name)
         self.Ts=self.simulation_data['timestamps'].values
         self.point_cloud = load_specific_data.load_point_cloud(dataset_name+config.point_cloud_appendix)
         #self.particles = self.create_uniform_particles()
@@ -69,41 +71,42 @@ class ParticleFilterLIDAR:
     def update(self, z, R):
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
 
-        weights = []
-        
+        lidar_distance_likelihoods = []
+        lidar_intensity_likelihoods = []
+        map_distances = []
 
         for p in self.particles[:,:2]: 
-            # preparing particle measurements
-            p_subs = p - self.point_cloud
-            p_dists = np.linalg.norm(p_subs, axis=1)
+            # getting lidar measurement
+            p_subs = p - self.point_cloud[:,:2]
+            p_dists = np.linalg.norm(p_subs[:,:2], axis=1)
+            p_intens = self.point_cloud[:,1][p_dists < config.lidar_range]
             p_in_range = p_dists[p_dists < config.lidar_range]
             if (len(p_in_range > 0)):
-                p_mode = stats.mode(p_in_range)[0][0]
-                weight = stats.norm(p_mode, config.lidar_sensor_std).pdf(z)
-                weights.append(weight)
+                p_mode_dist = stats.mode(p_in_range)[0][0]
+                p_mode_int = stats.mode(p_intens)[0][0]
+                lidar_distance_likelihood = stats.norm(p_mode_dist, config.lidar_sensor_std).pdf(z[0])
+                lidar_distance_likelihoods.append(lidar_distance_likelihood)
+                lidar_intensity_likelihood = stats.norm(p_mode_int, config.lidar_sensor_std).pdf(z[1])
+                lidar_intensity_likelihoods.append(lidar_intensity_likelihood)
+                
             else: 
-                weights.append(0)
-        '''
-        distances = []
-        for p in self.particles[:,:2]: 
-            diff = p-self.point_cloud
-            pc_in_range = self.point_cloud[np.linalg.norm(diff, axis=1) < config.lidar_range]
-            
-            if (len(pc_in_range) != len(z) and len(pc_in_range) == 0 or len(z) == 0): 
-                distance = 100
-            elif (len(pc_in_range) == 0 and len(z) == 0): 
-                distance = 1
-            else: 
-                distance = directed_hausdorff(z, pc_in_range)[0]
-            if (distance == math.inf): 
-                print(z, pc_in_range)
-            distances.append(distance)
-        distances = np.array(distances, dtype=float)
+                lidar_distance_likelihoods.append(0)
+                lidar_intensity_likelihoods.append(0)
 
-        distances = distances.max() - distances
-        '''
+            image_point = self.dm.world_coordinates_to_image(p)
+            if (image_point[0] < self.dm.distance_map.shape[1] and image_point[0] > 0 and image_point[1] < self.dm.distance_map.shape[0] and image_point[1] > 0): 
+                value = self.dm.get_distance_from_worlds(image_point)
+             
+                map_distances.append(value)
+            else:
+                map_distances.append(0)
 
-        self.weights = self.weights * weights
+
+        lidar_distance_likelihoods = np.array(lidar_distance_likelihoods)
+        lidar_intensity_likelihoods = np.array(lidar_intensity_likelihoods)
+        map_distances = np.array(map_distances)
+        average_likelihoods = np.array((map_distances + lidar_distance_likelihoods + lidar_intensity_likelihoods) / 3)
+        self.weights = self.weights * average_likelihoods
         self.weights += 1.e-300       
         self.weights /= sum(self.weights) # normalize
         #return weights
@@ -138,7 +141,7 @@ class ParticleFilterLIDAR:
     '''
     def run_pf_lidar(self):
     
-        zs = self.simulation_data['measurements'].values
+        zs = np.stack([self.simulation_data['measurements_distances'].values, self.simulation_data['measurements_intensities'].values], axis=1)
         us = np.stack([self.simulation_data['acceleration_input'], self.simulation_data['steering_input']], axis=1)
         
         
@@ -149,7 +152,6 @@ class ParticleFilterLIDAR:
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
 
-            
             self.update(z=zs[i], R=config.lidar_sensor_std)
             if (self.neff() < self.N/config.lidar_neff_threshold): 
 

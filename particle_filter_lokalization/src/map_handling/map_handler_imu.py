@@ -5,8 +5,8 @@ import numpy as np
 class DistanceMap: 
     def __init__(self, map_name): 
         self.map_name = map_name
-        self.image_data = json_handler.json_to_dict(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.image_data_suffix)
-        self.distance_map = np.array(image_handler.image_to_array(config.image_and_image_data_prefix+map_name+config.imu_data_appendix+config.distance_map_suffix))
+        self.image_data = json_handler.json_to_dict(config.paths['data_path']+config.image_and_image_data_prefix+map_name+config.image_data_suffix)
+        self.distance_map = np.array(image_handler.image_to_array(config.paths['data_path']+config.image_and_image_data_prefix+map_name+config.distance_map_suffix))
         self.scale = 0.63
 
         self.translate_x = 149

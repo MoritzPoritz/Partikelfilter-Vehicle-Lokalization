@@ -43,9 +43,9 @@ a_range = [0, 10]
 theta_range = [0, 2*np.pi]
 delta_range = [-max_steering_angle+20,max_steering_angle-20]
 
-initial_pos_radius = 30
+initial_pos_radius = 10
 
-lidar_range = 10
+lidar_range = 30
 
 # processmodel specifics
 L = 2.743
@@ -56,8 +56,8 @@ dt = 0.05
 rain_rates = np.arange(0, 25, 5) ##mm/h
 
 # Variables for statistical survey
-sample_size = 10
-
+sample_amount = 1
+sample_length = 400
 
 # for my private pc
 '''

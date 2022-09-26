@@ -31,7 +31,7 @@ def main():
         data_generator.generate_data(args.road_type)
 
     elif(args.filter_type== "all"): 
-        for i in range(config.sample_size):
+        for i in range(config.sample_amount):
             data_generator = ldg.LocalDataGenerator()
             data_generator.initial_velocity = np.random.uniform(config.v_range[0],config.v_range[1] )
             data_generator.initial_acceleration = np.random.uniform(config.a_range[0],config.a_range[1] )

@@ -37,7 +37,7 @@ class LocalDataGenerator:
         self.pc_env_y = []
         self.reflectivities = []
         # point cloud measurement
-        self.pc_creation_noise = 0.3
+        self.pc_creation_noise = 0.2
         self.pc_measure_noise = 0
         self.lidar_distance = config.lidar_range
         self.object_distance = 20
@@ -130,7 +130,7 @@ class LocalDataGenerator:
         self.xs.append(model.get_initial_state(x=1, y=1, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         u = np.array([0,0], dtype=float)
         
-        for i in range(1,1000): 
+        for i in range(1,config.sample_length): 
             u[1] = u[1] + 0.0001
             if (u[0] < 10): 
                 u[0] += 0.00001
@@ -146,8 +146,8 @@ class LocalDataGenerator:
 
     def create_points_from_pos(self, pos, theta, i): 
         #forward_vec = np.array(np.cos(theta), np.sin(theta)) + pos
-        point_1 = (np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
-        point_2 = (np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])+ (np.random.randn() * self.pc_creation_noise) * self.object_distance* np.sin(i))  + pos
+        point_1 = (np.array([np.cos(theta+np.pi/2), np.sin(theta+np.pi/2)])*10+ (np.random.randn() * self.pc_creation_noise))  + pos
+        point_2 = (np.array([np.cos(theta-np.pi/2), np.sin(theta-np.pi/2)])*10+ (np.random.randn() * self.pc_creation_noise))  + pos
         reflectivity_1 = np.random.random()
         reflectivity_2 = np.random.random()
         point_1 = np.append(point_1, reflectivity_1)
@@ -159,7 +159,7 @@ class LocalDataGenerator:
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0])
         self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
-        for i in range(1,1000): 
+        for i in range(1,config.sample_length): 
             self.xs.append(model.F(x=self.xs[i-1],u=u)) 
             self.add_to_data(self.xs[i-1], u, i)
            
@@ -175,18 +175,18 @@ class LocalDataGenerator:
         model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
         u = np.array([0,0])
         self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
-        for i in range(1,1000): 
+        for i in range(1,config.sample_length): 
             # set acceleration
-            if (i < 150 and u[0] < 15): 
+            if (i < 50 and u[0] < 15): 
                 u[0] += 0.01
-            elif (i > 150 and i < 250 and u[0] > 2): 
+            elif (i > 50 and i < 150 and u[0] > 2): 
                 u[0] -= 0.01
-            elif (i > 250 and i < 300 and u[0] > -1): 
+            elif (i > 150 and i < 250 and u[0] > -1): 
                 if (self.xs[i-1][2] >= 0):
                     u[0] -= 0.1
-            elif (i > 300 and i < 600 and u[0] < 20): 
+            elif (i > 250 and i < 350 and u[0] < 20): 
                 u[0] += 0.001
-            elif(i > 600 and i < 1200): 
+            elif(i > 350 and i < config.sample_length): 
                 u[0] = 0
             self.xs.append(model.F(x=self.xs[i-1],u=u)) 
             self.add_to_data(self.xs[i-1], u, i)
@@ -204,20 +204,18 @@ class LocalDataGenerator:
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         
-        for i in range(1,2000):
+        for i in range(1,config.sample_length):
             # set steering
-            if (i < 200 and u[1] < config.max_steering_angle): 
+            if (i < 50 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i> 200 and i < 600 and u[1] > -config.max_steering_angle): 
+            elif (i> 50 and i < 150 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 600 and i < 1000 and u[1] < config.max_steering_angle): 
+            elif (i > 150 and i < 250 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i > 1000 and i < 1400 and u[1] > -config.max_steering_angle): 
+            elif (i > 250 and i < 350 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 1400 and i < 1800 and u[1] < config.max_steering_angle): 
+            elif (i > 350 and i < 1800 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i > 1800 and i < 2000 and u[1] > 0): 
-                u[1] -= 0.001
             self.xs.append(model.F(x=self.xs[i-1],u=u))
             self.add_to_data(self.xs[i-1], u, i)
            
@@ -234,32 +232,30 @@ class LocalDataGenerator:
         u = np.array([0,0], dtype=float)
         self.xs.append(model.get_initial_state(x=0, y=0, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
         
-        for i in range(1,2000):
+        for i in range(1,config.sample_length):
             # set steering
-            if (i < 200 and u[1] < config.max_steering_angle): 
+            if (i < 50 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i> 200 and i < 600 and u[1] > -config.max_steering_angle): 
+            elif (i> 50 and i < 150 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 600 and i < 1000 and u[1] < config.max_steering_angle): 
+            elif (i > 150 and i < 250 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i > 1000 and i < 1400 and u[1] > -config.max_steering_angle): 
+            elif (i > 250 and i < 350 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 1400 and i < 1800 and u[1] < config.max_steering_angle): 
+            elif (i > 350 and i < 1800 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i > 1800 and i < 2000 and u[1] > 0): 
-                u[1] -= 0.001
 
             # set acceleration
-            if (i < 100 and u[0] < 15): 
+            if (i < 50 and u[0] < 15): 
                 u[0] += 0.01
-            elif (i > 100 and i < 150 and u[0] > 2): 
+            elif (i > 50 and i < 150 and u[0] > 2): 
                 u[0] -= 0.01
-            elif (i > 150 and i < 200 and u[0] > -1): 
+            elif (i > 150 and i < 250 and u[0] > -1): 
                 if (self.xs[i-1][2] >= 0):
                     u[0] -= 0.1
-            elif (i > 200 and i < 600 and u[0] < 20): 
+            elif (i > 250 and i < 350 and u[0] < 20): 
                 u[0] += 0.001
-            elif(i > 600 and i < 1200): 
+            elif(i > 350 and i < config.sample_length): 
                 u[0] = 0
 
             self.xs.append(model.F(x=self.xs[i-1],u=u))
@@ -275,7 +271,7 @@ class LocalDataGenerator:
 
 
     def save_point_cloud(self, type): 
-        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)
         data = {
             'pc_x': self.pc_env_x,
             'pc_y': self.pc_env_y, 
@@ -285,7 +281,7 @@ class LocalDataGenerator:
 
     def write_lidar_result_to_csv(self, type): 
         print(self.sample_id)
-        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)
         type = type+config.lidar_data_appendix
         basic_data = {
             'acceleration_input': self.car_ci_accelerations,
@@ -300,8 +296,8 @@ class LocalDataGenerator:
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
 
     def write_imu_result_to_csv(self, type): 
-        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)+"__"
-        type = type+config.imu_data_appendix
+        type = "sample_id_"+str(self.sample_id)+"__"+type+ "__rain_rate_"+str(self.rain_rate)
+        data_type = type+config.imu_data_appendix
         data = {
             'acceleration_input': self.car_ci_accelerations,
             'steering_input': self.car_ci_steerings, 
@@ -312,7 +308,7 @@ class LocalDataGenerator:
             'velocities_ground_truth': self.car_gt_velocities, 
             'timestamps': self.car_gt_timestamps
         }
-        csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, data)
+        csv_handler.write_structured_data_to_csv(config.paths['data_path']+data_type + config.data_suffix, data)
         self.create_map_image(config.image_and_image_data_prefix+type)
 
     def floating_numbers_to_whole_numbers(self, floating_number):
