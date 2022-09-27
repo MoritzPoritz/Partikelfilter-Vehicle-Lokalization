@@ -25,3 +25,5 @@ def apply_rain(position, rain_rate, pc_array, p_min, lidar_range):
     noisy_ranges = np.random.normal(0, 0.02*taken_ranges*(1-np.exp(-rain_rate))**2)
 
     return noisy_ranges, taken_intensities
+
+

@@ -116,9 +116,12 @@ class LocalDataGenerator:
         # create measurements
         for p in positions:
             #position, rain_rate, pc_array, p_min, lidar_range
+            
+            ''' Old way of measuring similarity
             ranges, intensities = rs.apply_rain(p,self.rain_rate, pc, self.p_min, config.lidar_range)
             self.measurement_distances_mode.append(stats.mode(ranges)[0][0])
             self.measurement_intensities_mode.append(stats.mode(intensities)[0][0])
+            '''
             #subs = (p - pc) #+ np.random.randn(p.shape)*self.pc_measure_noise
             #dists = np.linalg.norm(subs, axis=1)
             #in_range = dists[dists < config.lidar_range]
