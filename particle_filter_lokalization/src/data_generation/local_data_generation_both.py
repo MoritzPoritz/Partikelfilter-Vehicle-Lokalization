@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import rain_simulation.rain_simulation as rs
 
 from scipy import stats
+from scipy import spatial
+
 
 class LocalDataGenerator: 
     def __init__(self):
@@ -41,8 +43,8 @@ class LocalDataGenerator:
         self.pc_measure_noise = 0
         self.lidar_distance = config.lidar_range
         self.object_distance = 20
-        self.measurement_distances_mode = []
-        self.measurement_intensities_mode = []
+        self.measurement_hausdorff_distances_to_compare = []
+        
         # distance transform
         self.map_shape = (0,0)
         self.map = []
@@ -113,15 +115,18 @@ class LocalDataGenerator:
     def create_lidar_measurement(self): 
         pc = np.stack([self.pc_env_x, self.pc_env_y, self.reflectivities], axis=1)        
         positions = np.stack([self.car_gt_positions_x, self.car_gt_positions_y], axis=1)
-        # create measurements
+        subs_start = (pc[:,0:2]- np.array([0,0]))
+        # calculate their range
+        ranges_start = np.linalg.norm(subs_start, axis=1)
+        hausdorff_compare_pc = np.array(subs_start[ranges_start<config.lidar_range])
+            # create measurements
         for p in positions:
+
             #position, rain_rate, pc_array, p_min, lidar_range
             
-            ''' Old way of measuring similarity
-            ranges, intensities = rs.apply_rain(p,self.rain_rate, pc, self.p_min, config.lidar_range)
-            self.measurement_distances_mode.append(stats.mode(ranges)[0][0])
-            self.measurement_intensities_mode.append(stats.mode(intensities)[0][0])
-            '''
+            points_after_rain = rs.apply_rain(p,self.rain_rate, pc, self.p_min)
+            self.measurement_hausdorff_distances_to_compare.append(spatial.distance.directed_hausdorff(hausdorff_compare_pc, points_after_rain)[0])
+            
             #subs = (p - pc) #+ np.random.randn(p.shape)*self.pc_measure_noise
             #dists = np.linalg.norm(subs, axis=1)
             #in_range = dists[dists < config.lidar_range]
@@ -209,16 +214,11 @@ class LocalDataGenerator:
         
         for i in range(1,config.sample_length):
             # set steering
-            if (i < 50 and u[1] < config.max_steering_angle): 
+            if (i < 100 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i> 50 and i < 150 and u[1] > -config.max_steering_angle): 
+            elif (i> 100 and i < 400 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 150 and i < 250 and u[1] < config.max_steering_angle): 
-                u[1] += 0.001
-            elif (i > 250 and i < 350 and u[1] > -config.max_steering_angle): 
-                u[1] -= 0.001
-            elif (i > 350 and i < 1800 and u[1] < config.max_steering_angle): 
-                u[1] += 0.001
+            
             self.xs.append(model.F(x=self.xs[i-1],u=u))
             self.add_to_data(self.xs[i-1], u, i)
            
@@ -237,16 +237,11 @@ class LocalDataGenerator:
         
         for i in range(1,config.sample_length):
             # set steering
-            if (i < 50 and u[1] < config.max_steering_angle): 
+            if (i < 100 and u[1] < config.max_steering_angle): 
                 u[1] += 0.001
-            elif (i> 50 and i < 150 and u[1] > -config.max_steering_angle): 
+            elif (i> 100 and i < 400 and u[1] > -config.max_steering_angle): 
                 u[1] -= 0.001
-            elif (i > 150 and i < 250 and u[1] < config.max_steering_angle): 
-                u[1] += 0.001
-            elif (i > 250 and i < 350 and u[1] > -config.max_steering_angle): 
-                u[1] -= 0.001
-            elif (i > 350 and i < 1800 and u[1] < config.max_steering_angle): 
-                u[1] += 0.001
+
 
             # set acceleration
             if (i < 50 and u[0] < 15): 
@@ -292,8 +287,7 @@ class LocalDataGenerator:
             'positions_x_ground_truth': self.car_gt_positions_x,
             'positions_y_ground_truth': self.car_gt_positions_y,
             'velocities_ground_truth': self.car_gt_velocities,
-            'measurements_distances': self.measurement_distances_mode,
-            'measurements_intensities': self.measurement_intensities_mode, 
+            'measurements_distances': self.measurement_hausdorff_distances_to_compare,
             'timestamps': self.car_gt_timestamps
         }
         csv_handler.write_structured_data_to_csv(config.paths['data_path']+type + config.data_suffix, basic_data)
@@ -387,8 +381,8 @@ class LocalDataGenerator:
         self.pc_env_y = []
         self.reflectivities = []
         # point cloud measurement
-        self.measurement_distances_mode = []
-        self.measurement_intensities_mode = []
+        self.measurement_hausdorff_distances_to_compare = []
+        
 
         # distance transform
         self.map_shape = (0,0)

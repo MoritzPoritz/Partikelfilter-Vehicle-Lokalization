@@ -9,6 +9,7 @@ import utils.csv_handler as csv_handler
 from scipy.spatial.distance import directed_hausdorff
 import math
 from scipy import stats
+from scipy import spatial
 import map_handling.map_handler_imu as map_handler
 
 
@@ -46,6 +47,9 @@ class ParticleFilterLIDAR:
         self.xs = []
         self.mse = 0
         self.mse_db = 0
+        self.initial_position_pc = self.get_initial_comparison_pc()
+
+        
 
         #result related
         self.dataset_name = dataset_name
@@ -67,32 +71,32 @@ class ParticleFilterLIDAR:
         particles[:, 5] %= 2 * np.pi
         return particles
 
-    
+    def get_initial_comparison_pc(self): 
+        subs_start = (self.point_cloud[:,0:2]- np.array([0,0]))
+        # calculate their range
+        ranges_start = np.linalg.norm(subs_start, axis=1)
+        hausdorff_compare_pc = np.array(subs_start[ranges_start<config.lidar_range])
+        return hausdorff_compare_pc
+
+    def get_particle_lidar_values(self, position):
+        subs = position - self.point_cloud[:,:2]
+        ranges = np.linalg.norm(subs, axis=1)
+        subs_in_range = np.array(subs[ranges<config.lidar_range])
+        return subs_in_range
     def update(self, z, R):
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
 
-        lidar_distance_likelihoods = []
-        lidar_intensity_likelihoods = []
+        hausdorff_distance_likelihoods = []
         map_distances = []
 
         for p in self.particles[:,:2]: 
             # getting lidar measurement
-            p_subs = p - self.point_cloud[:,:2]
-            p_dists = np.linalg.norm(p_subs[:,:2], axis=1)
-            p_intens = self.point_cloud[:,1][p_dists < config.lidar_range]
-            p_in_range = p_dists[p_dists < config.lidar_range]
-            if (len(p_in_range > 0)):
-                p_mode_dist = stats.mode(p_in_range)[0][0]
-                p_mode_int = stats.mode(p_intens)[0][0]
-                lidar_distance_likelihood = stats.norm(p_mode_dist, config.lidar_sensor_std).pdf(z[0])
-                lidar_distance_likelihoods.append(lidar_distance_likelihood)
-                lidar_intensity_likelihood = stats.norm(p_mode_int, config.lidar_sensor_std).pdf(z[1])
-                lidar_intensity_likelihoods.append(lidar_intensity_likelihood)
-                
-            else: 
-                lidar_distance_likelihoods.append(0)
-                lidar_intensity_likelihoods.append(0)
-
+            
+            p_in_range = self.get_particle_lidar_values(p)
+            #if (len(p_in_range > 0)):
+            particle_pc_to_initial_pos_pc = spatial.distance.directed_hausdorff(self.initial_position_pc, p_in_range)[0]
+            hausdorff_distance_likelihoods.append(stats.norm(particle_pc_to_initial_pos_pc, config.lidar_sensor_std).pdf(z))    
+            
             image_point = self.dm.world_coordinates_to_image(p)
             if (image_point[0] < self.dm.distance_map.shape[1] and image_point[0] > 0 and image_point[1] < self.dm.distance_map.shape[0] and image_point[1] > 0): 
                 value = self.dm.get_distance_from_worlds(image_point)
@@ -102,10 +106,9 @@ class ParticleFilterLIDAR:
                 map_distances.append(0)
 
 
-        lidar_distance_likelihoods = np.array(lidar_distance_likelihoods)
-        lidar_intensity_likelihoods = np.array(lidar_intensity_likelihoods)
+        hausdorff_distance_likelihoods = np.array(hausdorff_distance_likelihoods)
         map_distances = np.array(map_distances)
-        average_likelihoods = np.array((map_distances + lidar_distance_likelihoods + lidar_intensity_likelihoods) / 3)
+        average_likelihoods = np.array((map_distances + hausdorff_distance_likelihoods) / 2)
         self.weights = self.weights * average_likelihoods
         self.weights += 1.e-300       
         self.weights /= sum(self.weights) # normalize
@@ -141,7 +144,7 @@ class ParticleFilterLIDAR:
     '''
     def run_pf_lidar(self):
     
-        zs = np.stack([self.simulation_data['measurements_distances'].values, self.simulation_data['measurements_intensities'].values], axis=1)
+        zs = self.simulation_data['measurements_distances']
         us = np.stack([self.simulation_data['acceleration_input'], self.simulation_data['steering_input']], axis=1)
         
         

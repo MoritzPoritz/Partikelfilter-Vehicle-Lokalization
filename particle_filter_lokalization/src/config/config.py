@@ -42,7 +42,7 @@ v_range = [0, 10]
 a_range = [0, 10]
 theta_range = [0, 2*np.pi]
 delta_range = [-max_steering_angle+20,max_steering_angle-20]
-
+#delta_range =[0,0]
 initial_pos_radius = 10
 
 lidar_range = 30
