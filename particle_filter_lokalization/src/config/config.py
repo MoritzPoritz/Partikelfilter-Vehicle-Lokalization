@@ -27,15 +27,15 @@ map_data_appendix = '__map_data'
 map_border = 100
 # stuff for particle filter
 # acc, orientation, distance
-N = 1000
+N = 2
 
 imu_sensor_std = [.3, .3, .3]
 
-imu_neff_threshold = 20
+imu_neff_threshold = 2
 imu_std = [0, 0]
 
 lidar_sensor_std = .02
-lidar_neff_threshold = 10
+lidar_neff_threshold = 2
 lidar_std = [0, 0]
 
 v_range = [0, 10]
@@ -53,10 +53,10 @@ dt = 0.05
 
 
 
-rain_rates = np.arange(0, 25, 5) ##mm/h
+rain_rates = np.arange(0, 50, 5) ##mm/h
 
 # Variables for statistical survey
-sample_amount = 1
+sample_amount = 10
 sample_length = 400
 
 # for my private pc

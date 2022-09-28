@@ -46,7 +46,33 @@ def main():
             pf.evaluate()
             pf.save_result()
             animated.plot_results_animated_lidar(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db, pf.point_cloud)
+    
+    elif (args.filter_type == "all" and args.road_type == "all"): 
+        all_data = os.listdir(config.paths["data_path"])
+        for file in all_data: 
+            if (file.endswith(".csv")): 
+                if ("imu__data" in file):
+                    file_name_array = file.split("__")
+                    sample_id = file_name_array[0]
+                    road_type_name = file_name_array[1]
+                    rain_rate = file_name_array[2]
+                    pf = pf_imu.ParticleFilterIMU(config.N, sample_id+"__"+road_type_name+"__"+rain_rate)
+                    pf.run_pf_imu()
+                    pf.evaluate()
+                    pf.save_result()
+                    print("Finished imu filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
 
+                elif ("lidar__data" in file):
+                    file_name_array = file.split("__")
+                    sample_id = file_name_array[0]
+                    road_type_name = file_name_array[1]
+                    rain_rate = file_name_array[2]
+                    pf = pf_lidar.ParticleFilterLIDAR(config.N, sample_id+"__"+road_type_name+"__"+rain_rate)
+                    pf.run_pf_lidar()
+                    pf.evaluate()
+                    pf.save_result()
+                print("Finished lidar filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
+    
     '''
         if(args.road_type == 'all'):   
             all_data = os.listdir(config.paths["data_path"])

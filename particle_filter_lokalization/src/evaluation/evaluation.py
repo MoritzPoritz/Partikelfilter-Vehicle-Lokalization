@@ -1,7 +1,7 @@
 import numpy as np
 import utils.csv_handler as csv_handler
 import matplotlib.pyplot as plt
-
+import config.config as config
 class ParticleFilterEvaluator: 
     def __init__(self, dataset_name): 
         self.dataset_name = dataset_name
