@@ -31,18 +31,22 @@ def main():
         data_generator.generate_data(args.road_type)
 
     elif(args.filter_type== "all"): 
-        for i in range(config.sample_amount):
+        if (args.road_type == "all"):
+            for i in range(config.sample_amount):
+                data_generator = ldg.LocalDataGenerator()
+                data_generator.initial_velocity = np.random.uniform(config.v_range[0],config.v_range[1] )
+                data_generator.initial_acceleration = np.random.uniform(config.a_range[0],config.a_range[1] )
+                data_generator.initial_theta = np.random.uniform(config.theta_range[0],config.theta_range[1] )
+                data_generator.initial_delta = np.random.uniform(config.delta_range[0],config.delta_range[1] )
+                data_generator.sample_id = i
+                road_type = np.random.choice(config.all_road_types)
+                for rain_rate in config.rain_rates:
+                    data_generator.rain_rate = rain_rate
+                    data_generator.generate_data(road_type)
+                    data_generator.reset_lists()
+        else: 
             data_generator = ldg.LocalDataGenerator()
-            data_generator.initial_velocity = np.random.uniform(config.v_range[0],config.v_range[1] )
-            data_generator.initial_acceleration = np.random.uniform(config.a_range[0],config.a_range[1] )
-            data_generator.initial_theta = np.random.uniform(config.theta_range[0],config.theta_range[1] )
-            data_generator.initial_delta = np.random.uniform(config.delta_range[0],config.delta_range[1] )
-            data_generator.sample_id = i
-            road_type = np.random.choice(config.all_road_types)
-            for rain_rate in config.rain_rates:
-                data_generator.rain_rate = rain_rate
-                data_generator.generate_data(road_type)
-                data_generator.reset_lists()
+            data_generator.generate_data(args.road_type)
     
 
 

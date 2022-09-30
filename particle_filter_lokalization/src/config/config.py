@@ -8,7 +8,7 @@ straight_x_variable_velocity_line_name = "straight_in_x_variable_velocity"
 curve_line_name = "curve"
 s_curve_name_constant_velocity = "s_curve_constant_velocity"
 s_curve_name_variable_velocity = "s_curve_variable_velocity"
-
+squares_name = "squared_streets"
 
 all_road_types = [straight_x_constant_velocity_line_name, straight_x_variable_velocity_line_name, curve_line_name, s_curve_name_constant_velocity, s_curve_name_variable_velocity]
 
@@ -27,23 +27,23 @@ map_data_appendix = '__map_data'
 map_border = 100
 # stuff for particle filter
 # acc, orientation, distance
-N = 2
+N = 5000
 
 imu_sensor_std = [.3, .3, .3]
 
 imu_neff_threshold = 2
-imu_std = [0, 0]
+imu_std = [0.02, 0.02]
 
 lidar_sensor_std = .02
 lidar_neff_threshold = 2
-lidar_std = [0, 0]
+lidar_std = [0.02, 0.02]
 
 v_range = [0, 10]
 a_range = [0, 10]
 theta_range = [0, 2*np.pi]
 delta_range = [-max_steering_angle+20,max_steering_angle-20]
 #delta_range =[0,0]
-initial_pos_radius = 10
+initial_pos_radius = 20
 
 lidar_range = 30
 
@@ -53,10 +53,10 @@ dt = 0.05
 
 
 
-rain_rates = np.arange(0, 50, 5) ##mm/h
+rain_rates = np.arange(0, 40, 10) ##mm/h
 
 # Variables for statistical survey
-sample_amount = 10
+sample_amount = 100
 sample_length = 400
 
 # for my private pc

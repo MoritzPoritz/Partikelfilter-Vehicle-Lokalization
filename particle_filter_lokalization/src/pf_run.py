@@ -71,7 +71,7 @@ def main():
                     pf.run_pf_lidar()
                     pf.evaluate()
                     pf.save_result()
-                print("Finished lidar filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
+                    print("Finished lidar filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
     
     '''
         if(args.road_type == 'all'):   

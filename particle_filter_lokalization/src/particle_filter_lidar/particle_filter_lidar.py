@@ -91,7 +91,6 @@ class ParticleFilterLIDAR:
 
         for p in self.particles[:,:2]: 
             # getting lidar measurement
-            
             p_in_range = self.get_particle_lidar_values(p)
             #if (len(p_in_range > 0)):
             particle_pc_to_initial_pos_pc = spatial.distance.directed_hausdorff(self.initial_position_pc, p_in_range)[0]

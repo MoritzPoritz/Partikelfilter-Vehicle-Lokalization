@@ -82,7 +82,8 @@ class LocalDataGenerator:
 
         elif(data_type == config.s_curve_name_variable_velocity): 
             self.drive_s_curve_with_variable_velocity()
-        
+        elif(data_type == config.squares_name): 
+            self.drive_in_squares()
         elif(data_type == "all"): 
             self.generate_all_data()
 
@@ -131,6 +132,30 @@ class LocalDataGenerator:
             #dists = np.linalg.norm(subs, axis=1)
             #in_range = dists[dists < config.lidar_range]
             #self.measurement_distances_mode.append(stats.mode(in_range)[0][0])
+    def drive_in_squares(self):
+        self.reset_lists()
+        model = fw_bycicle_model.FrontWheelBycicleModel(vehicle_length=config.L, control_input_std=config.imu_std, dt=config.dt)
+        self.xs.append(model.get_initial_state(x=1, y=1, v=self.initial_velocity, a=self.initial_acceleration, theta=self.initial_theta, delta=self.initial_delta))
+        u = np.array([0,0], dtype=float)
+        
+        for i in range(1,config.sample_length): 
+            if (i > 100 and i < 120): 
+                u[1] += 0.2
+            if (i > 120 and u[1] > 0): 
+                u[1]-= 0.2
+
+            if (u[0] < 10): 
+                u[0] += 0.00001
+            elif(u[0]>10):
+                u[0] = 0
+            self.xs.append(model.F(x=self.xs[i-1],u=u)) 
+            self.add_to_data(self.xs[i-1], u, i)
+        self.create_lidar_measurement()
+        # save the results
+        self.save_point_cloud(config.squares_name)
+        self.write_lidar_result_to_csv(config.squares_name)
+        self.write_imu_result_to_csv(config.squares_name)
+
 
     def drive_a_long_curve(self): 
         self.reset_lists()
