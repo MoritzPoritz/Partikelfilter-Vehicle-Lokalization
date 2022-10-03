@@ -29,23 +29,36 @@ map_border = 100
 # acc, orientation, distance
 N = 5000
 
-imu_sensor_std = [.3, .3, .3]
+# standard derivation for measurements
+imu_sensor_std_measurement = [.03, .03, .03]
+lidar_sensor_std_measurement = .02
 
+# standard derivation used in filter
+imu_sensor_std_filter = [.3, .3, .3]
+lidar_sensor_std_filter = .2
+
+# standard derivations for filter creation
+v_std = 0.5
+a_std = 0.5
+theta_std = np.pi/5
+delta_std = np.pi/5
+
+# standard derivation used to noise control input
+imu_std = [0.02, 0.02] # control input std
+lidar_std = [0.02, 0.02] # control input std
+
+# threshold for resampling
 imu_neff_threshold = 2
-imu_std = [0.02, 0.02]
-
-lidar_sensor_std = .02
 lidar_neff_threshold = 2
-lidar_std = [0.02, 0.02]
 
 v_range = [0, 10]
 a_range = [0, 10]
 theta_range = [0, 2*np.pi]
 delta_range = [-max_steering_angle+20,max_steering_angle-20]
-#delta_range =[0,0]
+# radius for gaussian particle spawn
 initial_pos_radius = 20
-
-lidar_range = 30
+# range for lidar sensor
+lidar_range = 100
 
 # processmodel specifics
 L = 2.743

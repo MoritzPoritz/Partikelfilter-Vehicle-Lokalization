@@ -49,7 +49,7 @@ class ParticleFilterIMU:
                 self.simulation_data['orientation_measurement'][0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std[0], config.imu_sensor_std[1], config.imu_sensor_std[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std_measurement[0], config.imu_sensor_std_measurement[1], config.imu_sensor_std_measurement[1], np.deg2rad(70)])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -67,20 +67,7 @@ class ParticleFilterIMU:
         for i in range(self.N): 
             self.particles[i] = self.process_model.F(x=self.particles[i], u=u)
         
-    '''
-    creates uniformly distributed particles
-    '''
-    def create_uniform_particles(self):
-        particles = np.empty((self.N, 6))
-        particles[:, 0] = np.random.uniform(self.x_range[0], self.x_range[1], size=self.N)
-        particles[:, 1] = np.random.uniform(self.y_range[0], self.y_range[1], size=self.N)
-        particles[:, 2] = np.random.uniform(self.v_range[0], self.v_range[1], size=self.N)
-        particles[:, 3] = np.random.uniform(self.a_range[0], self.a_range[1], size=self.N)
-        particles[:, 4] = np.random.uniform(self.theta_range[0], self.theta_range[1], size=self.N)
-        particles[:, 5] = np.random.uniform(self.delta_range[0], self.delta_range[1], size=self.N)
-        particles[:, 4] %= 2 * np.pi
-        particles[:, 5] %= 2 * np.pi
-        return particles
+    
     def create_gaussian_particles(self,mean, std):
         particles = np.empty((self.N, 6))
         particles[:, 0] = mean[0] + (np.random.rand(self.N) * std[0])
@@ -158,7 +145,7 @@ class ParticleFilterIMU:
             self.particles_at_t.append(copy.copy(self.particles))
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
-            self.update(z=zs[i], R=config.imu_sensor_std)
+            self.update(z=zs[i], R=config.imu_sensor_std_measurement)
         
             if (self.neff() < self.N/config.imu_neff_threshold): 
 

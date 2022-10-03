@@ -75,8 +75,8 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())   
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std_measurement[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std_measurement[1]*np.random.randn())   
             
         self.write_result_to_csv(config.curve_line_name)
 
@@ -94,8 +94,8 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())   
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std_measurement[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std_measurement[1]*np.random.randn())   
             
         self.write_result_to_csv(config.straight_x_constant_velocity_line_name)
 
@@ -127,8 +127,8 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std_measurement[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std_measurement[1]*np.random.randn())
         
         self.write_result_to_csv(config.s_curve_name_constant_velocity)
 
@@ -176,8 +176,8 @@ class LocalDataGeneratorIMU:
             self.car_gt_positions_y.append(self.xs[i-1][1])
             self.car_gt_velocities.append(self.xs[i-1][2])
             self.car_gt_timestamps.append(config.dt*i)
-            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std[0]*np.random.randn()) 
-            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std[1]*np.random.randn())
+            self.car_m_accelerations.append(self.xs[i-1][3]+config.imu_sensor_std_measurement[0]*np.random.randn()) 
+            self.car_m_orientations.append(self.xs[i-1][4]+config.imu_sensor_std_measurement[1]*np.random.randn())
         
         self.write_result_to_csv(config.s_curve_name_variable_velocity)
 

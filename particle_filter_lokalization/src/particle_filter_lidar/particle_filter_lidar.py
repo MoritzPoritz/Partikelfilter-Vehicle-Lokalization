@@ -11,7 +11,7 @@ import math
 from scipy import stats
 from scipy import spatial
 import map_handling.map_handler_imu as map_handler
-
+import time
 
 
 class ParticleFilterLIDAR: 
@@ -37,7 +37,7 @@ class ParticleFilterLIDAR:
                 np.random.uniform(0, np.pi*2, 1)[0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std[0], config.imu_sensor_std[1], config.imu_sensor_std[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius, config.initial_pos_radius, config.v_std, config.a_std, config.theta_std, config.delta_std])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -61,12 +61,12 @@ class ParticleFilterLIDAR:
     
     def create_gaussian_particles(self,mean, std):
         particles = np.empty((self.N, 6))
-        particles[:, 0] = mean[0] + (np.random.rand(self.N) * std[0])
-        particles[:, 1] = mean[1] + (np.random.rand(self.N) * std[1])
-        particles[:, 2] = mean[2] + (np.random.rand(self.N) * std[2])
-        particles[:, 3] = mean[3] + (np.random.rand(self.N) * std[3])
-        particles[:, 4] = mean[4] + (np.random.rand(self.N) * std[0])
-        particles[:, 5] = mean[5] + (np.random.rand(self.N) * std[0])
+        particles[:, 0] = mean[0] + (np.random.rand(self.N) * std[0]) # x
+        particles[:, 1] = mean[1] + (np.random.rand(self.N) * std[1]) # y
+        particles[:, 2] = mean[2] + (np.random.rand(self.N) * std[2]) # v
+        particles[:, 3] = mean[3] + (np.random.rand(self.N) * std[3]) # a
+        particles[:, 4] = mean[4] + (np.random.rand(self.N) * std[4])# theta
+        particles[:, 5] = mean[5] + (np.random.rand(self.N) * std[5]) # delta
         particles[:, 4] %= 2 * np.pi
         particles[:, 5] %= 2 * np.pi
         return particles
@@ -83,6 +83,7 @@ class ParticleFilterLIDAR:
         ranges = np.linalg.norm(subs, axis=1)
         subs_in_range = np.array(subs[ranges<config.lidar_range])
         return subs_in_range
+
     def update(self, z, R):
         # find the lidar pointcloud for each particle than calculate its distances to the measurement
 
@@ -94,7 +95,7 @@ class ParticleFilterLIDAR:
             p_in_range = self.get_particle_lidar_values(p)
             #if (len(p_in_range > 0)):
             particle_pc_to_initial_pos_pc = spatial.distance.directed_hausdorff(self.initial_position_pc, p_in_range)[0]
-            hausdorff_distance_likelihoods.append(stats.norm(particle_pc_to_initial_pos_pc, config.lidar_sensor_std).pdf(z))    
+            hausdorff_distance_likelihoods.append(stats.norm(particle_pc_to_initial_pos_pc, R).pdf(z))    
             
             image_point = self.dm.world_coordinates_to_image(p)
             if (image_point[0] < self.dm.distance_map.shape[1] and image_point[0] > 0 and image_point[1] < self.dm.distance_map.shape[0] and image_point[1] > 0): 
@@ -153,8 +154,10 @@ class ParticleFilterLIDAR:
             self.particles_at_t.append(copy.copy(self.particles))
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
-
-            self.update(z=zs[i], R=config.lidar_sensor_std)
+            
+            start = time.time()
+            self.update(z=zs[i], R=config.lidar_sensor_std_filter)
+            print("Update duration", time.time() - start)
             if (self.neff() < self.N/config.lidar_neff_threshold): 
 
                 resample_counter += 1

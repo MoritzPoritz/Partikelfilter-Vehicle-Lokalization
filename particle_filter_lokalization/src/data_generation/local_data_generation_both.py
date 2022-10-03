@@ -102,8 +102,8 @@ class LocalDataGenerator:
         self.car_gt_timestamps.append(config.dt*i)
 
         #save imu measurements
-        self.car_m_accelerations.append(x[3]+config.imu_sensor_std[0]*np.random.randn()) 
-        self.car_m_orientations.append(x[4]+config.imu_sensor_std[1]*np.random.randn())   
+        self.car_m_accelerations.append(x[3]+config.imu_sensor_std_measurement[0]*np.random.randn()) 
+        self.car_m_orientations.append(x[4]+config.imu_sensor_std_measurement[1]*np.random.randn())   
         # save lidar measurements
         points = self.create_points_from_pos(np.array([x[0], x[1]]), x[4],i)
         for p in points:
