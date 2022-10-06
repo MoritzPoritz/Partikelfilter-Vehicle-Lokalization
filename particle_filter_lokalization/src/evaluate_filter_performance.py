@@ -34,12 +34,11 @@ def main():
             rain_rate = splitted_file_name[2]
             filter_type = splitted_file_name[3]
 
-            
 
             evaluator = evaluation.ParticleFilterEvaluator(config.paths['filter_results_path'] + file_name)
             evaluator.evaluate_filter_performance()
             evaluator.calculate_se_over_time()
-            evaluation_results.append(np.array([filter_type, sample_id, rain_rate, road_type, evaluator.mse, evaluator.mse_db]))
+            evaluation_results.append(np.array([filter_type, sample_id, rain_rate, road_type, evaluator.mse, evaluator.mse_db, evaluator.rmse]))
         evaluation_results = np.array(evaluation_results)
         data = {
             'filter': evaluation_results[:,0],
@@ -47,7 +46,8 @@ def main():
             'rain': evaluation_results[:,2], 
             'road': evaluation_results[:,3],
             'mse': evaluation_results[:,4],
-            'mse_db': evaluation_results[:,5]
+            'mse_db': evaluation_results[:,5],
+            'rmse': evaluation_results[:,6]
         }    
         timestamp = datetime.datetime.now().strftime("%d_%m_%y_%H_%M_%S")
         csv_handler.write_structured_data_to_csv(config.paths['evaluation_results_path'] + 'results_'+timestamp, data)

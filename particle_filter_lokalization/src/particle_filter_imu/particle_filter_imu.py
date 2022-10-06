@@ -49,7 +49,7 @@ class ParticleFilterIMU:
                 self.simulation_data['orientation_measurement'][0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.imu_sensor_std_measurement[0], config.imu_sensor_std_measurement[1], config.imu_sensor_std_measurement[1], np.deg2rad(70)])
+            np.array([config.initial_pos_radius+np.random.uniform(0,config.pos_std), config.initial_pos_radius+np.random.uniform(0,config.pos_std), config.v_std, config.a_std, config.theta_std, config.delta_std])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -74,8 +74,8 @@ class ParticleFilterIMU:
         particles[:, 1] = mean[1] + (np.random.rand(self.N) * std[1])
         particles[:, 2] = mean[2] + (np.random.rand(self.N) * std[2])
         particles[:, 3] = mean[3] + (np.random.rand(self.N) * std[3])
-        particles[:, 4] = mean[4] + (np.random.rand(self.N) * std[0])
-        particles[:, 5] = mean[5] + (np.random.rand(self.N) * std[0])
+        particles[:, 4] = mean[4] + (np.random.rand(self.N) * std[4])
+        particles[:, 5] = mean[5] + (np.random.rand(self.N) * std[5])
         particles[:, 4] %= 2 * np.pi
         particles[:, 5] %= 2 * np.pi
         return particles

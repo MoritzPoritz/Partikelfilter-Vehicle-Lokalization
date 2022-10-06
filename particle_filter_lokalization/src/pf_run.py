@@ -4,6 +4,8 @@ import config.config as config
 import plotting.plot_animated_filter as animated
 import argparse
 import os
+import shutil
+
 def main(): 
     argparser = argparse.ArgumentParser(
         description='Script for generating vehicle movement data')
@@ -60,7 +62,11 @@ def main():
                     pf.run_pf_imu()
                     pf.evaluate()
                     pf.save_result()
+                    original = config.paths['data_path']+file
+                    to = config.paths['already_filtered']+file
                     print("Finished imu filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
+                    print("Moved ", original, " to ", to)
+                    shutil.move(original, to)
 
                 elif ("lidar__data" in file):
                     file_name_array = file.split("__")
@@ -71,7 +77,12 @@ def main():
                     pf.run_pf_lidar()
                     pf.evaluate()
                     pf.save_result()
+                    
+                    original = config.paths['data_path']+file
+                    to = config.paths['already_filtered']+file
                     print("Finished lidar filter on " + sample_id+"__"+road_type_name+"__"+rain_rate)
+                    print("Moved ", original, " to ", to)
+                    shutil.move(original, to)
     
     '''
         if(args.road_type == 'all'):   

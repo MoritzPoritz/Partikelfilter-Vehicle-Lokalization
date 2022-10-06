@@ -22,8 +22,8 @@ def apply_rain(position, rain_rate, pc_array, p_min):
     taken_intensities = new_intensities[new_intensities > p_min]
     taken_ranges = taken_ranges + np.random.randn()*config.lidar_sensor_std_measurement
 
-    noisy_ranges = np.random.normal(0, 0.02*taken_ranges*(1-np.exp(-rain_rate))**2)
-    points_after_rain = np.stack([noisy_ranges * np.cos(taken_angles), noisy_ranges * np.sin(taken_angles)], axis=1)
+    noisy_ranges = -(taken_ranges + np.random.normal(0, 0.02*taken_ranges*(1-np.exp(-rain_rate))**2))
+    points_after_rain = np.stack([noisy_ranges * np.cos(taken_angles), noisy_ranges * np.sin(taken_angles)], axis=1) + position
 
     return points_after_rain
 

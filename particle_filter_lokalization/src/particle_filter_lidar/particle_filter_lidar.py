@@ -34,10 +34,10 @@ class ParticleFilterLIDAR:
                 self.simulation_data['positions_y_ground_truth'][0],
                 self.simulation_data['velocities_ground_truth'][0], 
                 self.simulation_data['acceleration_input'][0],
-                np.random.uniform(0, np.pi*2, 1)[0],
+                self.simulation_data['orientation_measurement'][0],
                 self.simulation_data['steering_input'][0]
             ]), 
-            np.array([config.initial_pos_radius, config.initial_pos_radius, config.v_std, config.a_std, config.theta_std, config.delta_std])
+            np.array([config.initial_pos_radius+np.random.uniform(0,config.pos_std), config.initial_pos_radius+np.random.uniform(0,config.pos_std), config.v_std, config.a_std, config.theta_std, config.delta_std])
         )
         self.weights = np.full((self.particles.shape[0],), 1/self.particles.shape[0], dtype=float)
 
@@ -95,8 +95,9 @@ class ParticleFilterLIDAR:
             p_in_range = self.get_particle_lidar_values(p)
             #if (len(p_in_range > 0)):
             particle_pc_to_initial_pos_pc = spatial.distance.directed_hausdorff(self.initial_position_pc, p_in_range)[0]
-            hausdorff_distance_likelihoods.append(stats.norm(particle_pc_to_initial_pos_pc, R).pdf(z))    
             
+            hausdorff_distance_likelihoods.append(stats.norm(particle_pc_to_initial_pos_pc, R).pdf(z))    
+
             image_point = self.dm.world_coordinates_to_image(p)
             if (image_point[0] < self.dm.distance_map.shape[1] and image_point[0] > 0 and image_point[1] < self.dm.distance_map.shape[0] and image_point[1] > 0): 
                 value = self.dm.get_distance_from_worlds(image_point)
@@ -155,9 +156,9 @@ class ParticleFilterLIDAR:
             self.weights_at_t.append(copy.copy(self.weights))
             self.predict(u=us[i])
             
-            start = time.time()
+            #start = time.time()
             self.update(z=zs[i], R=config.lidar_sensor_std_filter)
-            print("Update duration", time.time() - start)
+            #print("Update duration", time.time() - start)
             if (self.neff() < self.N/config.lidar_neff_threshold): 
 
                 resample_counter += 1

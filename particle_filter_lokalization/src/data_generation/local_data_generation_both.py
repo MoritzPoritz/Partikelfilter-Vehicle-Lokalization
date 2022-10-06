@@ -312,6 +312,7 @@ class LocalDataGenerator:
             'positions_x_ground_truth': self.car_gt_positions_x,
             'positions_y_ground_truth': self.car_gt_positions_y,
             'velocities_ground_truth': self.car_gt_velocities,
+            'orientation_measurement': self.car_m_orientations,
             'measurements_distances': self.measurement_hausdorff_distances_to_compare,
             'timestamps': self.car_gt_timestamps
         }
