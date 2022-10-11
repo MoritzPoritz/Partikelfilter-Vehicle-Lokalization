@@ -2,7 +2,7 @@ import webbrowser
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-def plot_results_animated_imu(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db): 
+def plot_results_animated_imu(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db, rmse): 
         
     print("Particles: ",particles.dtype)
     print("weights: ",weights.dtype)
@@ -37,10 +37,11 @@ def plot_results_animated_imu(particles, weights, xs, ground_truth, dm, Ts, mse,
         #plotlines
         ax1.plot(np.array(image_xs_list)[:,0], np.array(image_xs_list)[:,1], color="red", label="estimation")
         ax1.plot(np.array(image_gt_list)[:,0], np.array(image_gt_list)[:,1], color="green", label="ground truth")
-
+        ax1.set_xlabel("x in Pixel")
+        ax1.set_ylabel("y in Pixel")
         ax1.legend()
       
-        plt.title("MSE: " + '{0:.3g}'.format(mse) + " - MSE dB: " +'{0:.3g}'.format(mse_db) + " - At: " + '{0:.3g}'.format(Ts[i]))
+        plt.title("RMSE: " + '{0:.3g}'.format(rmse)+"m")
         plt.legend()
 
 
@@ -49,7 +50,7 @@ def plot_results_animated_imu(particles, weights, xs, ground_truth, dm, Ts, mse,
 
 
 
-def plot_results_animated_lidar(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db, point_cloud): 
+def plot_results_animated_lidar(particles, weights, xs, ground_truth, dm, Ts, mse, mse_db, rmse, point_cloud): 
         
     print("Particles: ",particles.dtype)
     print("weights: ",weights.dtype)
@@ -57,6 +58,7 @@ def plot_results_animated_lidar(particles, weights, xs, ground_truth, dm, Ts, ms
     print("ground_truth: ",ground_truth.dtype)
     fig, ax1 = plt.subplots()
     mses = (xs[:,0] - ground_truth[:,0])**2 + (xs[:,0] - ground_truth[:,0])**2
+    
     image_xs_list = []
     image_gt_list = []
     pc_image = np.array(list(map(dm.world_coordinates_to_image, point_cloud[:,:2])))
@@ -87,10 +89,11 @@ def plot_results_animated_lidar(particles, weights, xs, ground_truth, dm, Ts, ms
         #plotlines
         ax1.plot(np.array(image_xs_list)[:,0], np.array(image_xs_list)[:,1], color="red", label="estimation")
         ax1.plot(np.array(image_gt_list)[:,0], np.array(image_gt_list)[:,1], color="green", label="ground truth")
-
+        ax1.set_xlabel("x in Pixel")
+        ax1.set_ylabel("y in Pixel")
         ax1.legend()
       
-        plt.title("MSE: " + '{0:.3g}'.format(mse) + " - MSE dB: " +'{0:.3g}'.format(mse_db) + " - At: " + '{0:.3g}'.format(Ts[i]))
+        plt.title("RMSE: " + '{0:.3g}'.format(rmse) + "m")
         plt.legend()
 
 

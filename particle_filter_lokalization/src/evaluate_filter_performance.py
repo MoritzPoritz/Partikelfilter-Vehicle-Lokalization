@@ -23,22 +23,22 @@ def main():
     if (args.road_type == "all"):
         evaluation_results = []
         results = os.listdir(config.paths['filter_results_path'])
-        print(results)
         samples = {}
         for r in results: 
-            
-            file_name = r.split(".")[0]
-            splitted_file_name = file_name.split("__")
-            sample_id = splitted_file_name[0]
-            road_type = splitted_file_name[1]
-            rain_rate = splitted_file_name[2]
-            filter_type = splitted_file_name[3]
+            if r.endswith(".csv"):               
+                file_name = r.split(".")[0]
+                print(file_name)
+                splitted_file_name = file_name.split("__")
+                sample_id = splitted_file_name[0]
+                road_type = splitted_file_name[1]
+                rain_rate = splitted_file_name[2]
+                filter_type = splitted_file_name[3]
 
 
-            evaluator = evaluation.ParticleFilterEvaluator(config.paths['filter_results_path'] + file_name)
-            evaluator.evaluate_filter_performance()
-            evaluator.calculate_se_over_time()
-            evaluation_results.append(np.array([filter_type, sample_id, rain_rate, road_type, evaluator.mse, evaluator.mse_db, evaluator.rmse]))
+                evaluator = evaluation.ParticleFilterEvaluator(config.paths['filter_results_path'] + file_name)
+                evaluator.evaluate_filter_performance()
+                evaluator.calculate_se_over_time()
+                evaluation_results.append(np.array([filter_type, sample_id, rain_rate, road_type, evaluator.mse, evaluator.mse_db, evaluator.rmse]))
         evaluation_results = np.array(evaluation_results)
         data = {
             'filter': evaluation_results[:,0],

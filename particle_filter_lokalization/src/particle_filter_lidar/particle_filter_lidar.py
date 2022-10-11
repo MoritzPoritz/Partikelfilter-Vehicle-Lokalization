@@ -193,3 +193,4 @@ class ParticleFilterLIDAR:
         ry = self.xs[:,1] - self.ground_truth[:,1]
         self.mse = (rx**2+ry**2).mean()
         self.mse_db = np.log10(self.mse)*10
+        self.rmse = np.sqrt(self.mse)

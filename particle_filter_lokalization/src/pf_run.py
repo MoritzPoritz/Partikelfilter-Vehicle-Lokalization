@@ -6,6 +6,8 @@ import argparse
 import os
 import shutil
 
+import time
+
 def main(): 
     argparser = argparse.ArgumentParser(
         description='Script for generating vehicle movement data')
@@ -35,19 +37,23 @@ def main():
     if (args.filter_type == "imu"):
         if (args.road_type == "specific"):
             pf = pf_imu.ParticleFilterIMU(config.N, args.specific_dataset)
+            start = time.time()
             pf.run_pf_imu()
+            print("IMU-particle-filter took: ", time.time() - start, " seconds")
             pf.evaluate()
             pf.save_result()
-            animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth, pf.dm, pf.Ts, pf.mse, pf.mse_db)
+            animated.plot_results_animated_imu(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth, pf.dm, pf.Ts, pf.mse, pf.mse_db, pf.rmse)
     elif (args.filter_type == "lidar"):
         print("Run LIDAR-FIlter")
         if (args.road_type == "specific"):
 
             pf = pf_lidar.ParticleFilterLIDAR(config.N,  args.specific_dataset)
+            start = time.time()
             pf.run_pf_lidar()
+            print("LIDAR-particle-filter took: ", time.time() - start, " seconds")
             pf.evaluate()
             pf.save_result()
-            animated.plot_results_animated_lidar(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db, pf.point_cloud)
+            animated.plot_results_animated_lidar(pf.particles_at_t, pf.weights_at_t, pf.xs, pf.ground_truth,pf.dm, pf.Ts, pf.mse, pf.mse_db, pf.rmse, pf.point_cloud)
     
     elif (args.filter_type == "all" and args.road_type == "all"): 
         all_data = os.listdir(config.paths["data_path"])
